@@ -1,9 +1,9 @@
 [gd_scene load_steps=2 format=3 uid="uid://bdo8yct77hj3n"]
 
-[ext_resource type="Script" uid="uid://5rixlc3ap2s8" path="res://Scenes/Slot.gd" id="1_vqo0j"]
+[ext_resource type="Script" uid="uid://5rixlc3ap2s8" path="res://Scripts/Slot.gd" id="1_vqo0j"]
 
 [node name="Slot" type="ColorRect"]
-custom_minimum_size = Vector2(80, 110)
+custom_minimum_size = Vector2(65, 95)
 offset_right = 80.0
 offset_bottom = 110.0
 pivot_offset = Vector2(40, 55)

@@ -1,9 +1,3 @@
-#Tablero del Juego
-
-#"S" = Spades/Picas 
-#"C" = Clubs/Tréboles 
-#"D" = Diamonds/Diamantes 
-#"H" = Hearts/Corazones)
 extends Node
 
 const BOARD_MAP = [
