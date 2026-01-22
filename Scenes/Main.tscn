@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://b0o82dl81mtsx"]
+
+[ext_resource type="Script" uid="uid://3epqf0ko1c2t" path="res://Scenes/Main.gd" id="1_r150o"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_r150o")
+
+[node name="GridContainer" type="GridContainer" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/h_separation = 5
+theme_override_constants/v_separation = 5
+columns = 10

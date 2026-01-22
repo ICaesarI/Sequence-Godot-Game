@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://bdo8yct77hj3n"]
+
+[ext_resource type="Script" uid="uid://5rixlc3ap2s8" path="res://Scenes/Slot.gd" id="1_vqo0j"]
+
+[node name="Slot" type="ColorRect"]
+custom_minimum_size = Vector2(80, 110)
+offset_right = 80.0
+offset_bottom = 110.0
+pivot_offset = Vector2(40, 55)
+script = ExtResource("1_vqo0j")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

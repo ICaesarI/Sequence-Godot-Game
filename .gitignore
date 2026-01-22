@@ -1,0 +1,21 @@
+# Godot-specific ignores
+.godot/
+*.translation
+*.node
+*.gen.cpp
+*.gen.h
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exp
+*.ilk
+*.pdb
+*.sln
+*.vcxproj
+*.user
+*.config
+*.vsproj
