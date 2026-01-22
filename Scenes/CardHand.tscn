@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://b6imhigfuuoip"]
+
+[ext_resource type="Script" uid="uid://bj1i7664ccn7a" path="res://Scripts/CardHand.gd" id="1_446wa"]
+
+[node name="CardHand" type="Button"]
+custom_minimum_size = Vector2(80, 120)
+offset_right = 70.0
+offset_bottom = 100.0
+script = ExtResource("1_446wa")
+
+[node name="Label" type="Label" parent="."]
+modulate = Color(1, 0, 1, 1)
+custom_minimum_size = Vector2(80, 120)
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1
