@@ -34,7 +34,7 @@ func set_highlight(active: bool):
 		scale = Vector2(1.0, 1.0)
 		z_index = 1
 
-# --- FUNCION PARA COLOCAR FICHA (Si no la tenías) ---
+# --- FUNCION PARA COLOCAR FICHA  ---
 func colocar_ficha(color_ficha, player_id):
 	occupied_by = player_id
 	
@@ -48,7 +48,7 @@ func colocar_ficha(color_ficha, player_id):
 	var style = StyleBoxFlat.new()
 	style.bg_color = color_ficha
 	style.set_corner_radius_all(30)
-	style.set_border_width_all(3) # Aquí corregimos el error anterior
+	style.set_border_width_all(3) 
 	style.border_color = Color.WHITE
 	
 	chip.add_theme_stylebox_override("panel", style)

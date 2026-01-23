@@ -4,6 +4,7 @@ extends Control
 @onready var hand_container = $VBoxContainer/HandContainer
 @onready var center_container = $VBoxContainer/CenterContainer
 @onready var vbox = $VBoxContainer
+@onready var label_turno = $VBoxContainer/LabelTurno
 
 var fichas_en_secuencia: Array = []
 
@@ -11,8 +12,8 @@ var slot_scene = preload("res://Scenes/Slot.tscn")
 var card_hand_scene = preload("res://Scenes/CardHand.tscn")
 
 var carta_seleccionada_actual = null
-var jugador_color = Color.MEDIUM_SLATE_BLUE
-var jugador_id = "p1"
+var color_j1 = Color.MEDIUM_SLATE_BLUE
+var color_j2 = Color.INDIAN_RED
 
 # ===============================
 # READY
@@ -27,7 +28,8 @@ func _ready():
 		GameManager.shuffle_deck()
 	
 	setup_board()
-	repartir_mano_inicial()
+	repartir_manos_iniciales()
+	actualizar_ui_turnos()
 
 # ===============================
 # TABLERO
@@ -51,22 +53,45 @@ func setup_board():
 			
 			new_slot.color = Color(0.2, 0.5, 0.2) if id == "FREE" else Color(0.4, 0.4, 0.4)
 
+func actualizar_ui_turnos():
+	if GameManager.turno_actual == 1:
+		label_turno.text = "TURNO: JUGADOR 1 (AZUL)"
+		label_turno.add_theme_color_override("font_color", color_j1)
+	else:
+		label_turno.text = "TURNO: JUGADOR 2 (ROJO)"
+		label_turno.add_theme_color_override("font_color", color_j2)
+
 # ===============================
-# MANO
+# GESTIÓN DE MANOS
 # ===============================
-func repartir_mano_inicial():
+func repartir_manos_iniciales():
+	# Llenamos las manos lógicas en el GameManager para ambos jugadores
+	for i in range(7):
+		GameManager.agregar_a_mano(1, GameManager.draw_card())
+		GameManager.agregar_a_mano(2, GameManager.draw_card())
+	
+	# Dibujamos la mano del jugador inicial (J1)
+	mostrar_mano_jugador_actual()
+
+func mostrar_mano_jugador_actual():
+	# Limpiar visualmente
 	for child in hand_container.get_children():
 		child.queue_free()
-	for i in range(7):
-		robar_carta()
+	
+	# Obtener datos del Singleton
+	var mano_datos = GameManager.get_mano_actual()
+	
+	for id_carta in mano_datos:
+		var new_card = card_hand_scene.instantiate()
+		hand_container.add_child(new_card)
+		new_card.setup(id_carta)
+		new_card.pressed.connect(func(): gestionar_seleccion_mano(new_card))
 
 func robar_carta():
 	var id_carta = GameManager.draw_card()
-	if id_carta:
-		var new_card = card_hand_scene.instantiate()
-		hand_container.add_child(new_card)
-		new_card.pressed.connect(func(): gestionar_seleccion_mano(new_card))
-		new_card.setup(id_carta)
+	if id_carta != "":
+		# Se agrega al array del jugador que acaba de jugar
+		GameManager.agregar_a_mano(GameManager.turno_actual, id_carta)
 
 func gestionar_seleccion_mano(nueva_carta):
 	if carta_seleccionada_actual == nueva_carta:
@@ -81,114 +106,110 @@ func gestionar_seleccion_mano(nueva_carta):
 	actualizar_ayuda_visual_tablero()
 
 # ===============================
-# HIGHLIGHT
+# LOGICA DE JUEGO
 # ===============================
 func actualizar_ayuda_visual_tablero():
 	for slot in grid.get_children():
-		slot.set_highlight(false)
+		if slot.has_method("set_highlight"): slot.set_highlight(false)
 	
-	if not carta_seleccionada_actual:
-		return
-	
+	if not carta_seleccionada_actual: return
 	var hand_id = carta_seleccionada_actual.card_id
+	var id_adversario = "p2" if GameManager.turno_actual == 1 else "p1"
 	
 	for slot in grid.get_children():
-		var valido := false
+		var es_valido = false
 		
-		if hand_id == slot.card_id and slot.occupied_by == "":
-			valido = true
-		elif hand_id.ends_with("_J2") and slot.card_id != "FREE" and slot.occupied_by == "":
-			valido = true
-		elif hand_id.ends_with("_J1") and slot.card_id != "FREE" and slot.occupied_by != "":
-			valido = true
+		# Poner normal o J2 (comodín)
+		if (hand_id == slot.card_id or hand_id.ends_with("_J2")) and slot.occupied_by == "" and slot.card_id != "FREE":
+			es_valido = true
 		
-		if valido:
+		# Quitar con J1 (un ojo)
+		elif hand_id.ends_with("_J1") and slot.card_id != "FREE" and slot.occupied_by == id_adversario:
+			if not slot in fichas_en_secuencia:
+				es_valido = true
+			
+		if es_valido and slot.has_method("set_highlight"):
 			slot.set_highlight(true)
 
-# ===============================
-# CLICK SLOT
-# ===============================
 func _on_slot_clicked(slot):
-	if not carta_seleccionada_actual:
-		return
+	if not carta_seleccionada_actual: return
 	
 	var hand_id = carta_seleccionada_actual.card_id
+	var id_adversario = "p2" if GameManager.turno_actual == 1 else "p1"
 	
-	if (hand_id == slot.card_id or hand_id.ends_with("_J2")) \
-	and slot.occupied_by == "" \
-	and slot.card_id != "FREE":
+	# ACCIÓN: PONER
+	if (hand_id == slot.card_id or hand_id.ends_with("_J2")) and slot.occupied_by == "" and slot.card_id != "FREE":
 		ejecutar_movimiento(slot, "pon")
 	
-	elif hand_id.ends_with("_J1") \
-	and slot.card_id != "FREE" \
-	and slot.occupied_by != "":
-		
-		if slot in fichas_en_secuencia:
-			print("No puedes quitar una ficha de una SEQUENCE")
-			return
-		
+	# ACCIÓN: QUITAR
+	elif hand_id.ends_with("_J1") and slot.card_id != "FREE" and slot.occupied_by == id_adversario:
+		if slot in fichas_en_secuencia: return
 		ejecutar_movimiento(slot, "quita")
 
-# ===============================
-# MOVIMIENTO
-# ===============================
 func ejecutar_movimiento(slot, accion):
 	if accion == "pon":
-		slot.colocar_ficha(jugador_color, jugador_id)
+		var color_actual = color_j1 if GameManager.turno_actual == 1 else color_j2
+		var id_jugador = "p" + str(GameManager.turno_actual)
+		slot.colocar_ficha(color_actual, id_jugador)
 		verificar_secuencia(slot)
-	
+		
 	elif accion == "quita":
 		for child in slot.get_children():
-			if child.name != "Label":
-				child.queue_free()
+			if child.name != "Label": child.queue_free()
 		slot.occupied_by = ""
 		slot.color = Color(0.4, 0.4, 0.4)
-	
+
 	finalizar_jugada()
 
 func finalizar_jugada():
+	# 1. Eliminar de la mano lógica del GameManager
 	if carta_seleccionada_actual:
-		carta_seleccionada_actual.queue_free()
+		GameManager.eliminar_de_mano(GameManager.turno_actual, carta_seleccionada_actual.card_id)
 		carta_seleccionada_actual = null
 	
-	actualizar_ayuda_visual_tablero()
+	# 2. El jugador que termina roba carta
 	robar_carta()
+	
+	# 3. Cambio de turno
+	GameManager.cambiar_turno()
+	
+	# 4. Refresco Visual Total
+	actualizar_ui_turnos()
+	mostrar_mano_jugador_actual()
+	actualizar_ayuda_visual_tablero()
 
 # ===============================
 # SEQUENCE LOGIC
 # ===============================
 func verificar_secuencia(slot_central):
 	var direcciones = [
-		Vector2i(1, 0),
-		Vector2i(0, 1),
-		Vector2i(1, 1),
-		Vector2i(1, -1)
+		Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(1, -1)
 	]
-	
 	var centro = _get_slot_coords(slot_central)
+	var id_dueno = slot_central.occupied_by 
 	
 	for dir in direcciones:
 		var linea: Array = []
 		
+		# Hacia atrás
 		var pos = centro - dir
 		while _pos_valida(pos):
 			var s = _get_slot_at(pos)
-			if s.occupied_by == jugador_id or s.card_id == "FREE":
+			if s.occupied_by == id_dueno or s.card_id == "FREE":
 				linea.insert(0, s)
 				pos -= dir
-			else:
-				break
+			else: break
 		
 		linea.append(slot_central)
 		
+		# Hacia adelante
 		pos = centro + dir
 		while _pos_valida(pos):
 			var s = _get_slot_at(pos)
-			if s.occupied_by == jugador_id or s.card_id == "FREE":
+			if s.occupied_by == id_dueno or s.card_id == "FREE":
 				linea.append(s)
 				pos += dir
-			else:
-				break
+			else: break
 		
 		if linea.size() >= 5:
 			for i in range(linea.size() - 4):
@@ -197,24 +218,20 @@ func verificar_secuencia(slot_central):
 
 func registrar_secuencia(slots):
 	var hay_nueva := false
-
 	for s in slots:
 		if not s in fichas_en_secuencia:
 			hay_nueva = true
 
-	if not hay_nueva:
-		return
+	if not hay_nueva: return
 
 	for s in slots:
 		if not s in fichas_en_secuencia:
 			fichas_en_secuencia.append(s)
-			s.color = Color(0.8, 0.8, 1.0)
-
-	print("SEQUENCE FORMADA (cruce permitido)")
-
+			# Efecto visual de secuencia completada
+			s.color = Color(0.2, 0.2, 0.2) 
 
 # ===============================
-# GRID UTILS
+# UTILS
 # ===============================
 func _get_slot_coords(slot) -> Vector2i:
 	var index = slot.get_index()
