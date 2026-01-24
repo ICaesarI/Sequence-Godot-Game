@@ -1,10 +1,14 @@
 extends Control
 
-@onready var grid = $VBoxContainer/CenterContainer/GridContainer
-@onready var hand_container = $VBoxContainer/HandContainer
-@onready var center_container = $VBoxContainer/CenterContainer
-@onready var vbox = $VBoxContainer
-@onready var label_turno = $VBoxContainer/LabelTurno
+@onready var grid = $RootMargin/VBoxContainer/CenterContainer/BoardAspect/BoardPanel/MarginContainer/GridContainer
+@onready var hand_container = $RootMargin/VBoxContainer/HandPanel/MarginContainer/HandRow/HandContainer
+@onready var center_container = $RootMargin/VBoxContainer/CenterContainer
+@onready var vbox = $RootMargin/VBoxContainer
+@onready var label_turno = $RootMargin/VBoxContainer/HeaderBar/LabelTurno
+@onready var discard_button: Button= $RootMargin/VBoxContainer/HandPanel/MarginContainer/HandRow/DiscardButton
+@onready var hand_panel = $RootMargin/VBoxContainer/HandPanel
+
+
 
 var fichas_en_secuencia: Array = []
 
@@ -20,8 +24,13 @@ var color_j2 = Color.INDIAN_RED
 # ===============================
 func _ready():
 	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	hand_container.size_flags_vertical = Control.SIZE_SHRINK_END
+	
+	discard_button.pressed.connect(_on_discard_pressed)
+	discard_button.disabled = true
+	
+	get_viewport().size_changed.connect(_resize_board_slots)
+
+
 	
 	if GameManager.get_deck_count() == 0:
 		GameManager.generate_deck()
@@ -43,7 +52,6 @@ func setup_board():
 		for id in row:
 			var new_slot = slot_scene.instantiate()
 			grid.add_child(new_slot)
-			new_slot.custom_minimum_size = Vector2(75, 110)
 			new_slot.card_id = id
 			
 			new_slot.slot_clicked.connect(_on_slot_clicked)
@@ -52,6 +60,7 @@ func setup_board():
 				new_slot.get_node("Label").text = "" if id == "FREE" else id.replace("_", " ")
 			
 			new_slot.color = Color(0.2, 0.5, 0.2) if id == "FREE" else Color(0.4, 0.4, 0.4)
+	_resize_board_slots()
 
 func actualizar_ui_turnos():
 	if GameManager.turno_actual == 1:
@@ -60,6 +69,38 @@ func actualizar_ui_turnos():
 	else:
 		label_turno.text = "TURNO: JUGADOR 2 (ROJO)"
 		label_turno.add_theme_color_override("font_color", color_j2)
+
+# ===============================
+# GESTIÓN DE SLOTS
+# ===============================
+		
+func _resize_board_slots():
+	await get_tree().process_frame
+
+	var available_w = grid.size.x
+	var available_h = grid.size.y
+	if available_w <= 0 or available_h <= 0:
+		return
+
+	var cols := 10
+	var rows := 10
+
+	# ratio slot: 75x110
+	var ratio := 75.0 / 110.0
+
+	# max height que cabe si usamos toda la altura
+	var cell_h = available_h / rows
+	var cell_w = cell_h * ratio
+
+	# si por ancho no cabe, recalculamos desde ancho
+	if cell_w * cols > available_w:
+		cell_w = available_w / cols
+		cell_h = cell_w / ratio
+
+	for slot in grid.get_children():
+		slot.custom_minimum_size = Vector2(cell_w, cell_h)
+
+
 
 # ===============================
 # GESTIÓN DE MANOS
@@ -104,7 +145,63 @@ func gestionar_seleccion_mano(nueva_carta):
 		carta_seleccionada_actual.set_selected(true)
 	
 	actualizar_ayuda_visual_tablero()
+	actualizar_estado_descartar()
+	
+# ===============================
+# Discard Card
+# ===============================
+func carta_tiene_jugada(hand_id: String) -> bool:
+	for slot in grid.get_children():
+		if slot.card_id == "FREE":
+			continue
+		if hand_id.ends_with("_J2"):
+			if slot.occupied_by == "":
+				return true
+		elif hand_id.ends_with("_J1"):
+			var id_adversario = "p2" if GameManager.turno_actual == 1 else "p1"
+			if slot.occupied_by == id_adversario and not (slot in fichas_en_secuencia):
+				return true
+		else:
+			if slot.card_id == hand_id and slot.occupied_by == "":
+				return true
+	return false
 
+
+func actualizar_estado_descartar():
+	if not carta_seleccionada_actual:
+		discard_button.disabled = true
+		return
+
+	var hand_id = carta_seleccionada_actual.card_id
+	# Solo habilitar si es dead card (NO tiene jugada)
+	discard_button.disabled = carta_tiene_jugada(hand_id)
+
+
+func _on_discard_pressed():
+	if not carta_seleccionada_actual:
+		return
+
+	var hand_id = carta_seleccionada_actual.card_id
+
+	# Seguridad: solo descartar si es dead card
+	if carta_tiene_jugada(hand_id):
+		print("Esta carta aún tiene jugada, no se puede descartar.")
+		return
+	# Quitar del modelo (GameManager)
+	GameManager.eliminar_de_mano(GameManager.turno_actual, hand_id)
+	
+	carta_seleccionada_actual.queue_free()
+	carta_seleccionada_actual = null
+	actualizar_ayuda_visual_tablero()
+	actualizar_estado_descartar()
+	
+	#Robar reemplazo para el jugador
+	robar_carta()
+	
+	GameManager.cambiar_turno()
+	actualizar_ui_turnos()
+	mostrar_mano_jugador_actual()
+	
 # ===============================
 # LOGICA DE JUEGO
 # ===============================

@@ -44,6 +44,10 @@ func colocar_ficha(color_ficha, player_id):
 	var chip = Panel.new()
 	chip.custom_minimum_size = Vector2(60, 60)
 	chip.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	chip.position = -chip.custom_minimum_size / 2
+	
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	
 	var style = StyleBoxFlat.new()
 	style.bg_color = color_ficha

@@ -1,6 +1,48 @@
-[gd_scene load_steps=2 format=3 uid="uid://b0o82dl81mtsx"]
+[gd_scene load_steps=6 format=3 uid="uid://b0o82dl81mtsx"]
 
 [ext_resource type="Script" uid="uid://3epqf0ko1c2t" path="res://Scripts/Main.gd" id="1_r150o"]
+[ext_resource type="Texture2D" uid="uid://08pa5hs07j4h" path="res://Assets/Textures/45-degree-fabric-dark.png" id="2_idj7w"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_idj7w"]
+bg_color = Color(0.043137256, 0.078431375, 0.07058824, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.16470589, 0.23921569, 0.21176471, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0, 0, 0, 0.5019608)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r150o"]
+bg_color = Color(0, 0, 0, 0)
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.019607844, 0.023529412, 0.02745098, 0.8)
+border_blend = true
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_size = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kln2b"]
+bg_color = Color(0.078431375, 0.09411765, 0.105882354, 1)
+border_width_left = 16
+border_width_top = 16
+border_width_right = 16
+border_width_bottom = 16
+border_color = Color(0.16862746, 0.20392157, 0.22745098, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -11,37 +53,118 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_r150o")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = -1152.0
-offset_bottom = -498.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Background" type="ColorRect" parent="RootMargin"]
+layout_mode = 2
+color = Color(0.05490196, 0.16470589, 0.11764706, 1)
+
+[node name="TextureRect" type="TextureRect" parent="RootMargin/Background"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_idj7w")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="HeaderBar" type="HBoxContainer" parent="RootMargin/VBoxContainer"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="LabelTurno" type="Label" parent="RootMargin/VBoxContainer/HeaderBar"]
+layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/separation = 20
+theme_override_font_sizes/font_size = 20
+text = "TURNO: JUGADOR 1"
+horizontal_alignment = 1
 
-[node name="CenterContainer" type="CenterContainer" parent="VBoxContainer"]
+[node name="CenterContainer" type="CenterContainer" parent="RootMargin/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-size_flags_stretch_ratio = 10.0
 
-[node name="GridContainer" type="GridContainer" parent="VBoxContainer/CenterContainer"]
+[node name="BoardAspect" type="AspectRatioContainer" parent="RootMargin/VBoxContainer/CenterContainer"]
 layout_mode = 2
-size_flags_vertical = 3
+ratio = 0.68
+stretch_mode = 0
+
+[node name="BoardPanel" type="Panel" parent="RootMargin/VBoxContainer/CenterContainer/BoardAspect"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_idj7w")
+
+[node name="MarginContainer" type="MarginContainer" parent="RootMargin/VBoxContainer/CenterContainer/BoardAspect/BoardPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 32.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 19
+theme_override_constants/margin_top = 19
+theme_override_constants/margin_right = 19
+theme_override_constants/margin_bottom = 19
+
+[node name="GridContainer" type="GridContainer" parent="RootMargin/VBoxContainer/CenterContainer/BoardAspect/BoardPanel/MarginContainer"]
+layout_mode = 2
 theme_override_constants/h_separation = 2
 theme_override_constants/v_separation = 4
 columns = 10
 
-[node name="HandContainer" type="HBoxContainer" parent="VBoxContainer"]
+[node name="HandPanel" type="Panel" parent="RootMargin/VBoxContainer"]
+custom_minimum_size = Vector2(900, 150)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_r150o")
+
+[node name="MarginContainer" type="MarginContainer" parent="RootMargin/VBoxContainer/HandPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="HandRow" type="HBoxContainer" parent="RootMargin/VBoxContainer/HandPanel/MarginContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="HandContainer" type="HBoxContainer" parent="RootMargin/VBoxContainer/HandPanel/MarginContainer/HandRow"]
 custom_minimum_size = Vector2(0, 130)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="LabelTurno" type="Label" parent="VBoxContainer"]
+[node name="Spacer" type="Control" parent="RootMargin/VBoxContainer/HandPanel/MarginContainer/HandRow"]
 layout_mode = 2
-text = "TURNO: JUGADOR 1"
+
+[node name="DiscardButton" type="Button" parent="RootMargin/VBoxContainer/HandPanel/MarginContainer/HandRow"]
+custom_minimum_size = Vector2(180, 48)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/h_separation = 4
+theme_override_styles/normal = SubResource("StyleBoxFlat_kln2b")
+disabled = true
+text = "Discard"
