@@ -7,17 +7,18 @@ extends Control
 @onready var label_turno = $RootMargin/VBoxContainer/HeaderBar/LabelTurno
 @onready var discard_button: Button= $RootMargin/VBoxContainer/HandPanel/MarginContainer/HandRow/DiscardButton
 @onready var hand_panel = $RootMargin/VBoxContainer/HandPanel
-
+@onready var header_bar = $RootMargin/VBoxContainer/HeaderBar
+@onready var board_panel = $RootMargin/VBoxContainer/CenterContainer/BoardAspect/BoardPanel
 
 
 var fichas_en_secuencia: Array = []
-
 var slot_scene = preload("res://Scenes/Slot.tscn")
 var card_hand_scene = preload("res://Scenes/CardHand.tscn")
 
 var carta_seleccionada_actual = null
 var color_j1 = Color.MEDIUM_SLATE_BLUE
 var color_j2 = Color.INDIAN_RED
+var turn_tween: Tween
 
 # ===============================
 # READY
@@ -59,7 +60,14 @@ func setup_board():
 			if new_slot.has_node("Label"):
 				new_slot.get_node("Label").text = "" if id == "FREE" else id.replace("_", " ")
 			
-			new_slot.color = Color(0.2, 0.5, 0.2) if id == "FREE" else Color(0.4, 0.4, 0.4)
+			var base_c = Color(0.2, 0.5, 0.2) if id == "FREE" else Color(0.4, 0.4, 0.4)
+			var final_c = Color(base_c.r, base_c.g, base_c.b, 0.75)
+
+			if new_slot.has_method("set_base_color"):
+				new_slot.set_base_color(final_c, id == "FREE")
+			else:
+				new_slot.color = final_c
+
 	_resize_board_slots()
 
 func actualizar_ui_turnos():
@@ -69,6 +77,7 @@ func actualizar_ui_turnos():
 	else:
 		label_turno.text = "TURNO: JUGADOR 2 (ROJO)"
 		label_turno.add_theme_color_override("font_color", color_j2)
+	actualizar_indicador_jugador_activo()
 
 # ===============================
 # GESTIÓN DE SLOTS
@@ -126,7 +135,10 @@ func mostrar_mano_jugador_actual():
 		var new_card = card_hand_scene.instantiate()
 		hand_container.add_child(new_card)
 		new_card.setup(id_carta)
-		new_card.pressed.connect(func(): gestionar_seleccion_mano(new_card))
+		new_card.connect_pressed(func(): gestionar_seleccion_mano(new_card))
+		
+	actualizar_jerarquia_visual_mano()
+
 
 func robar_carta():
 	var id_carta = GameManager.draw_card()
@@ -144,8 +156,31 @@ func gestionar_seleccion_mano(nueva_carta):
 		carta_seleccionada_actual = nueva_carta
 		carta_seleccionada_actual.set_selected(true)
 	
+	actualizar_jerarquia_visual_mano()
 	actualizar_ayuda_visual_tablero()
 	actualizar_estado_descartar()
+
+
+func actualizar_jerarquia_visual_mano():
+	var hay_seleccion = carta_seleccionada_actual != null
+
+	for wrapper in hand_container.get_children():
+		# wrapper es CardWrapper (Control)
+		var btn = wrapper.get_node("CardHand") as Button
+		if not btn:
+			continue
+
+		if not hay_seleccion:
+			# Todo normal si no hay selección
+			btn.self_modulate = Color.WHITE
+			continue
+
+		# Si hay selección: solo la seleccionada queda normal
+		if wrapper == carta_seleccionada_actual:
+			btn.self_modulate = Color.WHITE
+		else:
+			btn.self_modulate = Color(0.55, 0.55, 0.55, 1.0)
+
 	
 # ===============================
 # Discard Card
@@ -172,7 +207,7 @@ func actualizar_estado_descartar():
 		discard_button.disabled = true
 		return
 
-	var hand_id = carta_seleccionada_actual.card_id
+	var hand_id = carta_seleccionada_actual.get_card_id()
 	# Solo habilitar si es dead card (NO tiene jugada)
 	discard_button.disabled = carta_tiene_jugada(hand_id)
 
@@ -181,26 +216,39 @@ func _on_discard_pressed():
 	if not carta_seleccionada_actual:
 		return
 
-	var hand_id = carta_seleccionada_actual.card_id
+	var hand_id = carta_seleccionada_actual.get_card_id()
 
 	# Seguridad: solo descartar si es dead card
 	if carta_tiene_jugada(hand_id):
 		print("Esta carta aún tiene jugada, no se puede descartar.")
 		return
-	# Quitar del modelo (GameManager)
+
+	# 1) Quitar del modelo (GameManager)
 	GameManager.eliminar_de_mano(GameManager.turno_actual, hand_id)
-	
-	carta_seleccionada_actual.queue_free()
+
+	# 2) Animar descarte y esperar
+	var t: Tween = null
+	if carta_seleccionada_actual.has_method("play_discard_anim"):
+		t = carta_seleccionada_actual.play_discard_anim()
+	else:
+		carta_seleccionada_actual.queue_free()
+
 	carta_seleccionada_actual = null
 	actualizar_ayuda_visual_tablero()
 	actualizar_estado_descartar()
-	
-	#Robar reemplazo para el jugador
+
+	if t:
+		await t.finished
+	else:
+		await get_tree().process_frame
+
+	# 3) Robar reemplazo + cambiar turno + refrescar UI
 	robar_carta()
-	
 	GameManager.cambiar_turno()
 	actualizar_ui_turnos()
 	mostrar_mano_jugador_actual()
+	actualizar_jerarquia_visual_mano()
+
 	
 # ===============================
 # LOGICA DE JUEGO
@@ -208,9 +256,10 @@ func _on_discard_pressed():
 func actualizar_ayuda_visual_tablero():
 	for slot in grid.get_children():
 		if slot.has_method("set_highlight"): slot.set_highlight(false)
+		if slot.has_method("set_playable"):slot.set_playable(false)
 	
 	if not carta_seleccionada_actual: return
-	var hand_id = carta_seleccionada_actual.card_id
+	var hand_id = carta_seleccionada_actual.get_card_id()
 	var id_adversario = "p2" if GameManager.turno_actual == 1 else "p1"
 	
 	for slot in grid.get_children():
@@ -227,11 +276,13 @@ func actualizar_ayuda_visual_tablero():
 			
 		if es_valido and slot.has_method("set_highlight"):
 			slot.set_highlight(true)
+		if slot.has_method("set_playable"):
+			slot.set_playable(true)
 
 func _on_slot_clicked(slot):
 	if not carta_seleccionada_actual: return
 	
-	var hand_id = carta_seleccionada_actual.card_id
+	var hand_id = carta_seleccionada_actual.get_card_id()
 	var id_adversario = "p2" if GameManager.turno_actual == 1 else "p1"
 	
 	# ACCIÓN: PONER
@@ -254,14 +305,19 @@ func ejecutar_movimiento(slot, accion):
 		for child in slot.get_children():
 			if child.name != "Label": child.queue_free()
 		slot.occupied_by = ""
-		slot.color = Color(0.4, 0.4, 0.4)
+		if slot.has_method("restore_base"):
+			slot.restore_base()
+		else:
+			# fallback
+			slot.color = Color(0.4, 0.4, 0.4, 0.75)
+
 
 	finalizar_jugada()
 
 func finalizar_jugada():
 	# 1. Eliminar de la mano lógica del GameManager
 	if carta_seleccionada_actual:
-		GameManager.eliminar_de_mano(GameManager.turno_actual, carta_seleccionada_actual.card_id)
+		GameManager.eliminar_de_mano(GameManager.turno_actual, carta_seleccionada_actual.get_card_id())
 		carta_seleccionada_actual = null
 	
 	# 2. El jugador que termina roba carta
@@ -274,6 +330,18 @@ func finalizar_jugada():
 	actualizar_ui_turnos()
 	mostrar_mano_jugador_actual()
 	actualizar_ayuda_visual_tablero()
+	actualizar_jerarquia_visual_mano()
+	
+func actualizar_indicador_jugador_activo():
+	if turn_tween:
+		turn_tween.kill()
+		turn_tween = null
+		
+	# Animación sutil de confirmación
+	header_bar.scale = Vector2.ONE * 0.98
+	turn_tween = create_tween()
+	turn_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	turn_tween.tween_property(header_bar, "scale", Vector2.ONE, 0.16)
 
 # ===============================
 # SEQUENCE LOGIC
@@ -320,12 +388,64 @@ func registrar_secuencia(slots):
 			hay_nueva = true
 
 	if not hay_nueva: return
+	
+	# Popup global (una vez por secuencia)
+	mostrar_popup_sequence()
 
 	for s in slots:
 		if not s in fichas_en_secuencia:
 			fichas_en_secuencia.append(s)
-			# Efecto visual de secuencia completada
-			s.color = Color(0.2, 0.2, 0.2) 
+			
+		# Efecto visual de secuencia completada (estado final)
+		s.color = Color(0.2, 0.2, 0.2, 0.90)
+
+		# Animación de “WOW”
+		if s.has_method("play_sequence_anim"):
+			s.play_sequence_anim()
+
+func mostrar_popup_sequence():
+	var popup := Label.new()
+	popup.text = "SEQUENCE!"
+	popup.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	popup.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+	# Estilo rápido (puedes cambiar fuente/size luego)
+	popup.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	popup.add_theme_font_size_override("font_size", 42)
+
+	# Lo ponemos sobre el área del tablero (CenterContainer)
+	center_container.add_child(popup)
+	popup.z_index = 999
+
+	# Centramos en el tablero (usando el tamaño del container)
+	popup.position = (center_container.size / 2) - (popup.size / 2)
+
+	# Estado inicial (pequeño y ligeramente abajo)
+	popup.scale = Vector2(0.8, 0.8)
+	popup.modulate.a = 0.0
+	popup.position += Vector2(0, 18)
+
+	# Animación: aparece + pop + sube + se desvanece
+	var t := create_tween()
+	t.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	t.tween_property(popup, "modulate:a", 1.0, 0.10)
+	t.parallel().tween_property(popup, "scale", Vector2(1.05, 1.05), 0.18)
+	t.parallel().tween_property(popup, "position", popup.position - Vector2(0, 18), 0.18)
+
+	t.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	t.tween_property(popup, "scale", Vector2.ONE, 0.10)
+
+	# Mantener un poquito
+	t.tween_interval(0.35)
+
+	# Fade out + subir leve
+	t.tween_property(popup, "modulate:a", 0.0, 0.22)
+	t.parallel().tween_property(popup, "position", popup.position - Vector2(0, 10), 0.22)
+
+	t.finished.connect(func():
+		popup.queue_free()
+	)
+
 
 # ===============================
 # UTILS
