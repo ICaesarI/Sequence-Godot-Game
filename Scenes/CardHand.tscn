@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://b6imhigfuuoip"]
 
-[ext_resource type="Script" uid="uid://dt2eo0yvjjf0a" path="res://Scenes/CardWrapper.gd" id="1_1stme"]
+[ext_resource type="Script" uid="uid://dt2eo0yvjjf0a" path="res://Scripts/CardWrapper.gd" id="1_1stme"]
 [ext_resource type="Script" uid="uid://bj1i7664ccn7a" path="res://Scripts/CardHand.gd" id="1_446wa"]
 
 [node name="CardWrapper" type="Control"]
