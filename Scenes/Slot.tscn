@@ -1,18 +1,47 @@
-[gd_scene load_steps=3 format=3 uid="uid://bdo8yct77hj3n"]
+[gd_scene load_steps=2 format=3 uid="uid://bdo8yct77hj3n"]
 
 [ext_resource type="Script" uid="uid://5rixlc3ap2s8" path="res://Scripts/Slot.gd" id="1_vqo0j"]
 
-[sub_resource type="Theme" id="Theme_vqo0j"]
-
-[node name="Slot" type="ColorRect"]
+[node name="Slot" type="Control"]
+clip_contents = true
 custom_minimum_size = Vector2(65, 95)
-offset_right = 80.0
-offset_bottom = 110.0
-pivot_offset = Vector2(40, 55)
-theme = SubResource("Theme_vqo0j")
+layout_mode = 3
+anchors_preset = 0
+offset_right = 65.0
+offset_bottom = 95.0
 script = ExtResource("1_vqo0j")
+
+[node name="BG" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 4.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="CardFace" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(65, 95)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
+
+[node name="ChipLayer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 0

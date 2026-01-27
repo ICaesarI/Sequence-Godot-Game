@@ -3,6 +3,8 @@ extends Button
 var card_id: String = ""
 var selected:= false
 
+@onready var art: TextureRect = $Art
+
 # --- STATE ---
 var base_pos: Vector2
 var hover_tween: Tween
@@ -22,7 +24,13 @@ func _ready():
 func setup(id: String):
 	card_id = id
 	pivot_offset = size / 2
-	
+	var tex := CardAssets.get_face(card_id)
+	if tex:
+		art.texture = tex
+		text = ""   # quitamos texto
+	else:
+		text = id
+
 	# --- ESTILO BICYCLE BLANCO ---
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color.WHITE
