@@ -136,6 +136,7 @@ func gestionar_seleccion_mano(nueva_carta):
 			carta_seleccionada_actual.set_selected(false)
 		carta_seleccionada_actual = nueva_carta
 		carta_seleccionada_actual.set_selected(true)
+		print("Seleccion: ",carta_seleccionada_actual.get_card_id())
 	
 	actualizar_jerarquia_visual_mano()
 	actualizar_ayuda_visual_tablero()

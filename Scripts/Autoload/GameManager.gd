@@ -13,7 +13,7 @@ func _ready():
 	
 	generate_deck()
 	shuffle_deck()
-
+"""
 func generate_deck():
 	cards.clear()
 	var suits = ["S", "C", "D", "H"]
@@ -30,9 +30,8 @@ func generate_deck():
 			cards.append(s + "_J1")
 			cards.append(s + "_J2")
 	print("Mazo generado con éxito. Total cartas: ", cards.size())
-	
-#Prueba de Solo Jotos
 """
+#Prueba de Solo Jotos
 func generate_deck():
 	cards.clear()
 	var suits = ["S", "C", "D", "H"]
@@ -44,7 +43,7 @@ func generate_deck():
 			cards.append(s + "_J2") # Jota de 2 ojos (Poner/Comodín)
 	
 	print("MAZO DE PRUEBA GENERADO: Solo Jotas. Total: ", cards.size())
-"""
+
 func shuffle_deck():
 	cards.shuffle()
 

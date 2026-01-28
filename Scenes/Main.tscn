@@ -1,7 +1,6 @@
 [gd_scene load_steps=9 format=3 uid="uid://b0o82dl81mtsx"]
 
 [ext_resource type="Script" uid="uid://3epqf0ko1c2t" path="res://Scripts/Main.gd" id="1_r150o"]
-[ext_resource type="StyleBox" uid="uid://cjku8f4ukj52i" path="res://Assets/new_style_box_flat.tres" id="3_kln2b"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_idj7w"]
 frequency = 0.5
@@ -35,6 +34,19 @@ shadow_size = 10
 shadow_offset = Vector2(0, 5)
 anti_aliasing = false
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kln2b"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+bg_color = Color(0.90588236, 0.29803923, 0.23529412, 1)
+border_width_bottom = 2
+border_color = Color(0.5882353, 0.1764706, 0.13333334, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rgh2o"]
 bg_color = Color(0.45882353, 0.105882354, 0.08235294, 1)
 
@@ -67,7 +79,7 @@ layout_mode = 2
 color = Color(0.05490196, 0.16470589, 0.11764706, 1)
 
 [node name="TextureRect" type="TextureRect" parent="RootMargin/Background"]
-modulate = Color(0.039215688, 0.078431375, 0.0627451, 1)
+modulate = Color(0.009145312, 0.2442224, 0.19641438, 1)
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
@@ -164,9 +176,9 @@ layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/h_separation = 4
 theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = ExtResource("3_kln2b")
+theme_override_styles/normal = SubResource("StyleBoxFlat_kln2b")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_rgh2o")
-theme_override_styles/hover = ExtResource("3_kln2b")
+theme_override_styles/hover = SubResource("StyleBoxFlat_kln2b")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_pbw6q")
 disabled = true
 text = "DISCARD
