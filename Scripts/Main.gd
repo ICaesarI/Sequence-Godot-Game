@@ -14,6 +14,9 @@ var fichas_en_secuencia: Array = []
 var carta_seleccionada_actual = null
 var turn_tween: Tween
 
+var secuencias_j1: int = 0
+var secuencias_j2: int = 0
+
 # Colores de Jugadores
 const COLOR_J1 = Color.MEDIUM_SLATE_BLUE
 const COLOR_J2 = Color.INDIAN_RED
@@ -221,20 +224,27 @@ func _on_slot_clicked(slot):
 		slot.quitar_ficha()
 		finalizar_jugada()
 
-
 func finalizar_jugada():
-	# 1. Eliminar carta usada
-	GameManager.eliminar_de_mano(GameManager.turno_actual, carta_seleccionada_actual.get_card_id())
-	carta_seleccionada_actual = null
+	# 1. Eliminar carta usada (El GameManager ahora la enviará al descarte)
+	if carta_seleccionada_actual:
+		GameManager.eliminar_de_mano(GameManager.turno_actual, carta_seleccionada_actual.get_card_id())
+		carta_seleccionada_actual = null
 	
 	# 2. Robar y pasar turno
 	robar_carta()
+	
+	# 3. Verificar si el jugador actual GANÓ (2 secuencias)
+	if _verificar_victoria_jugador():
+		_finalizar_partida()
+		return # Detener el flujo de turnos
+
 	GameManager.cambiar_turno()
 	
-	# 3. Refrescar UI
+	# 4. Refrescar UI
 	actualizar_ui_turnos()
 	mostrar_mano_jugador_actual()
-	actualizar_ayuda_visual_tablero() 
+	actualizar_ayuda_visual_tablero()
+
 
 func robar_carta():
 	var id = GameManager.draw_card()
@@ -285,6 +295,24 @@ func _carta_tiene_jugada_posible(hand_id: String) -> bool:
 # ===============================
 # LÓGICA DE SECUENCIA (Ganar)
 # ===============================
+func _verificar_victoria_jugador() -> bool:
+	if GameManager.turno_actual == 1:
+		return secuencias_j1 >= 2
+	else:
+		return secuencias_j2 >= 2
+
+func _finalizar_partida():
+	var ganador = "JUGADOR 1 (AZUL)" if GameManager.turno_actual == 1 else "JUGADOR 2 (ROJO)"
+	label_turno.text = "¡GANADOR: " + ganador + "!"
+	label_turno.add_theme_color_override("font_color", Color.GOLD)
+	
+
+	grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hand_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	discard_button.disabled = true
+	
+	mostrar_popup_victoria(ganador)
+
 func verificar_secuencia(slot_central):
 	var direcciones = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(1, -1)]
 	var centro = _get_slot_coords(slot_central)
@@ -293,7 +321,7 @@ func verificar_secuencia(slot_central):
 	for dir in direcciones:
 		var linea: Array = [slot_central]
 		
-		# Expandir en ambas direcciones
+		# Expandir en ambas direcciones para buscar 5 fichas
 		for d in [dir, -dir]:
 			var pos = centro + d
 			while _pos_valida(pos):
@@ -301,7 +329,7 @@ func verificar_secuencia(slot_central):
 				# Slot propio O comodín Free del tablero (esquinas)
 				if s.occupied_by == id_dueno or s.card_id == "FREE":
 					if d == dir: linea.append(s) 
-					else: linea.insert(0, s)     
+					else: linea.insert(0, s)      
 					pos += d
 				else:
 					break
@@ -313,6 +341,7 @@ func verificar_secuencia(slot_central):
 				var bloque = linea.slice(i, i + 5)
 				_procesar_secuencia_encontrada(bloque)
 
+
 func _procesar_secuencia_encontrada(slots):
 	var fichas_reutilizadas_count = 0
 	for s in slots:
@@ -321,6 +350,13 @@ func _procesar_secuencia_encontrada(slots):
 	
 	if fichas_reutilizadas_count > 1:
 		return
+	
+	if GameManager.turno_actual == 1:
+		secuencias_j1 += 1
+		print("Secuencias J1: ", secuencias_j1)
+	else:
+		secuencias_j2 += 1
+		print("Secuencias J2: ", secuencias_j2)
 		
 	mostrar_popup_sequence()
 	
@@ -332,7 +368,7 @@ func _procesar_secuencia_encontrada(slots):
 			fichas_en_secuencia.append(s)
 		if s.has_method("play_sequence_anim"):
 			s.play_sequence_anim(current_delay)
-			current_delay += delay_step 
+			current_delay += delay_step
 # ===============================
 # VISUALES Y HELPERS
 # ===============================
@@ -365,3 +401,48 @@ func _get_slot_at(pos: Vector2i):
 
 func _pos_valida(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < 10 and pos.y >= 0 and pos.y < 10
+	
+func mostrar_popup_victoria(nombre_ganador: String):
+	# Creamos un CanvasLayer para que se dibuje por encima de toda la UI actual
+	var layer = CanvasLayer.new()
+	layer.layer = 100 # Un nivel alto asegura que esté al frente
+	add_child(layer)
+	
+	# El fondo oscuro
+	var overlay = ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.8) # Un poco más oscuro para que resalte
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(overlay)
+	
+	# Contenedor para centrar el texto y el botón
+	var v_box = VBoxContainer.new()
+	v_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	v_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	overlay.add_child(v_box)
+	
+	# Etiqueta de victoria
+	var win_label = Label.new()
+	win_label.text = "¡PARTIDA FINALIZADA!\nGANADOR: " + nombre_ganador
+	win_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	win_label.add_theme_font_size_override("font_size", 50)
+	# Le damos una sombra para que se lea mejor
+	win_label.add_theme_constant_override("shadow_offset_x", 3)
+	win_label.add_theme_constant_override("shadow_offset_y", 3)
+	v_box.add_child(win_label)
+	
+	# Espaciador
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 30)
+	v_box.add_child(spacer)
+	
+	# Botón de reiniciar
+	var btn_restart = Button.new()
+	btn_restart.text = "REINICIAR JUEGO"
+	btn_restart.custom_minimum_size = Vector2(250, 70)
+	v_box.add_child(btn_restart)
+	
+	# Conexión para reiniciar
+	btn_restart.pressed.connect(func(): 
+		GameManager.reiniciar_juego() # Asegúrate de llamar a limpiar el mazo
+		get_tree().reload_current_scene()
+	)

@@ -20,6 +20,23 @@ func reiniciar_juego():
 	generate_deck()
 	shuffle_deck()
 
+
+# --- FUNCIÓN DE PRUEBA: SOLO JOTAS ---
+func generate_deck():
+	cards.clear()
+	var suits = ["S", "C", "D", "H"]
+	
+	# Generamos muchas copias de Jotas para pruebas de lógica
+	for i in range(10): 
+		for s in suits:
+			# Jota de 1 ojo (Quitar ficha del rival)
+			#cards.append(s + "_J1") 
+			# Jota de 2 ojos (Comodín / Poner donde sea)
+			cards.append(s + "_J2")
+	
+	print("MAZO DE PRUEBA GENERADO: Solo Jotas. Total: ", cards.size())
+
+"""
 func generate_deck():
 	cards.clear()
 	var suits = ["S", "C", "D", "H"]
@@ -40,7 +57,7 @@ func generate_deck():
 				cards.append(s + "_J2")
 				
 	print("Mazo generado con éxito (2 barajas). Total: ", cards.size())
-
+"""
 func shuffle_deck():
 	cards.shuffle()
 
