@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Sequence"
-run/main_scene="uid://b0o82dl81mtsx"
+run/main_scene="uid://bvwiu6nssy7b5"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -19,7 +19,6 @@ config/icon="res://icon.svg"
 
 BoardData="*res://Scripts/Autoload/BoardData.gd"
 GameManager="*res://Scripts/Autoload/GameManager.gd"
-CartaData="*res://Scripts/Data/CartaData.gd"
 CardAssets="*res://Scripts/Autoload/CardAssets.gd"
 
 [rendering]

@@ -6,20 +6,36 @@ extends Control
 @onready var label_turno = $RootMargin/VBoxContainer/HeaderBar/LabelTurno
 @onready var discard_button: Button= $RootMargin/VBoxContainer/HandPanel/MarginContainer/HandRow/DiscardButton
 @onready var header_bar = $RootMargin/VBoxContainer/HeaderBar
+@onready var hand_panel = $RootMargin/VBoxContainer/HandPanel
+
 
 var slot_scene = preload("res://Scenes/Slot.tscn")
 var card_hand_scene = preload("res://Scenes/CardHand.tscn")
 
+const MENU_SCENE_PATH = "res://Scenes/MainMenu.tscn"
+
+
 var fichas_en_secuencia: Array = []
 var carta_seleccionada_actual = null
 var turn_tween: Tween
+var color_tween: Tween
 
-var secuencias_j1: int = 0
-var secuencias_j2: int = 0
+# Contador de secuencias POR EQUIPO (Team ID -> Cantidad)
+# 0: Azul, 1: Rojo, 2: Verde
+var team_sequences = {
+	0: 0,
+	1: 0,
+	2: 0
+}
 
-# Colores de Jugadores
-const COLOR_J1 = Color.MEDIUM_SLATE_BLUE
-const COLOR_J2 = Color.INDIAN_RED
+# --- CONFIGURACIÓN VISUAL ---
+# Mapeamos los IDs de equipo del GameManager a Colores Visuales
+const TEAM_COLORS = {
+	0: Color.DODGER_BLUE,# Equipo BLUE
+	1: Color.INDIAN_RED,# Equipo RED
+	2: Color.FOREST_GREEN# Equipo GREEN
+}
+
 # Colores del Tablero
 const COLOR_SLOT_FREE = Color(0.2, 0.5, 0.2)
 const COLOR_SLOT_NORMAL = Color(0.4, 0.4, 0.4)
@@ -32,9 +48,9 @@ func _ready():
 	discard_button.disabled = true
 	get_viewport().size_changed.connect(_resize_board_slots)
 
-	if GameManager.get_deck_count() == 0:
-		GameManager.generate_deck()
-		GameManager.shuffle_deck()
+	if GameManager.players.size() == 0:
+		GameManager.setup_game(2)
+		
 	setup_board()
 	repartir_manos_iniciales()
 	actualizar_ui_turnos()
@@ -86,14 +102,53 @@ func _resize_board_slots():
 # ===============================
 
 func actualizar_ui_turnos():
-	if GameManager.turno_actual == 1:
-		label_turno.text = "TURNO: JUGADOR 1 (AZUL)"
-		label_turno.add_theme_color_override("font_color", COLOR_J1)
-	else:
-		label_turno.text = "TURNO: JUGADOR 2 (ROJO)"
-		label_turno.add_theme_color_override("font_color", COLOR_J2)
+	var p_data = GameManager.get_current_player_data()
+	var team_id = p_data["team"]
+	
+	# Texto dinámico: "TURNO: JUGADOR 1 (EQUIPO 0)"
+	label_turno.text = "TURNO: " + p_data["name"]
+	
+	# Color del texto según el equipo
+	var base_color = Color.WHITE
+	if TEAM_COLORS.has(team_id):
+		base_color = TEAM_COLORS[team_id]
+	
+	label_turno.add_theme_color_override("font_color", base_color)
+	
+	_animar_cambio_color_panel(base_color)
 	_animar_header_turno()
 
+func _animar_cambio_color_panel(target_color: Color):
+	# Obtenemos el StyleBox actual del panel (o creamos uno si no tiene override)
+	var style_box = hand_panel.get_theme_stylebox("panel")
+	
+	# Importante: Duplicar el estilo la primera vez para no afectar a otros nodos
+	# que compartan el mismo recurso, o si es la primera vez que lo tocamos.
+	if not style_box.resource_local_to_scene:
+		style_box = style_box.duplicate()
+		hand_panel.add_theme_stylebox_override("panel", style_box)
+		style_box.resource_local_to_scene = true
+	
+	# Si ya existe una animación de color corriendo, la matamos para empezar la nueva
+	if color_tween:
+		color_tween.kill()
+		
+	color_tween = create_tween().set_parallel(true) # Parallel para animar fondo y borde a la vez
+	
+	# 1. Color del BORDE (Intenso, el color real del equipo)
+	# Asegúrate de haber puesto Border Width > 0 en el editor para que se vea
+	style_box.border_color = target_color # Valor inicial brusco si no tiene
+	# Pero mejor lo animamos desde el color actual (godot lo maneja auto con tween_property)
+	color_tween.tween_property(style_box, "border_color", target_color, 0.4)
+	
+	# 2. Color del FONDO (Oscuro, para que las cartas resalten)
+	# Usamos .darkened(0.7) para que sea un tono muy oscuro del color del equipo
+	var dark_bg = target_color.darkened(0.8) 
+	# Ajustamos la transparencia (alpha) para que no sea negro solido si tienes fondo atrás
+	dark_bg.a = 0.8 
+	
+	color_tween.tween_property(style_box, "bg_color", dark_bg, 0.4)
+	
 func _animar_header_turno():
 	if turn_tween: turn_tween.kill()
 	header_bar.scale = Vector2(0.98, 0.98)
@@ -105,12 +160,30 @@ func _animar_header_turno():
 # GESTIÓN DE MANOS
 # ===============================
 func repartir_manos_iniciales():
-	# Llenamos las manos lógicas en el GameManager para ambos jugadores
-	# Solo repartimos si las manos están vacías
-	if GameManager.get_mano_actual().is_empty(): 
-		for i in range(7):
-			GameManager.agregar_a_mano(1, GameManager.draw_card())
-			GameManager.agregar_a_mano(2, GameManager.draw_card())
+	# REGLA OFICIAL DE SEQUENCE SOBRE CARTAS POR JUGADOR
+	var num_players = GameManager.players.size()
+	var cards_per_hand = 7 # Default para 2 jugadores
+	
+	match num_players:
+		2: cards_per_hand = 7
+		3: cards_per_hand = 6
+		4: cards_per_hand = 6
+		6: cards_per_hand = 5
+		8: cards_per_hand = 4
+		9: cards_per_hand = 4
+		10: cards_per_hand = 3
+		12: cards_per_hand = 3
+	
+	# Repartir a TODOS los jugadores registrados en el GameManager
+	# Solo si sus manos están vacías
+	var needs_deal = true
+	if not GameManager.players[0]["hand"].is_empty():
+		needs_deal = false
+		
+	if needs_deal:
+		for i in range(cards_per_hand):
+			for p_index in range(num_players):
+				GameManager.agregar_a_mano(p_index, GameManager.draw_card())
 
 	mostrar_mano_jugador_actual()
 
@@ -172,23 +245,29 @@ func actualizar_jerarquia_visual_mano():
 func _obtener_tipo_movimiento(slot, hand_id: String) -> String:
 	if slot.card_id == "FREE": return ""
 	
-	var id_adversario = "p2" if GameManager.turno_actual == 1 else "p1"
+	# Datos del equipo actual
+	var current_team_id = GameManager.get_current_team_id()
+	# String que identifica al equipo en el slot (ej: "team_0")
+	var current_team_str = "team_" + str(current_team_id)
 	
 	if hand_id.ends_with("_J1"):
-		if slot.occupied_by == id_adversario:
-			if not (slot in fichas_en_secuencia): 
+		# Jota de 1 ojo: QUITAR
+		# Es válido si está ocupado, PERO NO por mi equipo
+		if slot.occupied_by != "" and slot.occupied_by != current_team_str:
+			if not (slot in fichas_en_secuencia):
 				return "quita"
 	
 	elif hand_id.ends_with("_J2"):
+		# Jota de 2 ojos: PONER (Comodín)
 		if slot.occupied_by == "":
 			return "pon"
 			
 	else:
+		# Carta Normal
 		if slot.card_id == hand_id and slot.occupied_by == "":
 			return "pon"
 			
 	return ""
-
 # ===============================
 # INTERACCION TABLERO
 # ===============================
@@ -214,9 +293,12 @@ func _on_slot_clicked(slot):
 	var accion = _obtener_tipo_movimiento(slot, hand_id)	
 	
 	if accion == "pon":
-		var color_actual = COLOR_J1 if GameManager.turno_actual == 1 else COLOR_J2
-		var id_jugador = "p" + str(GameManager.turno_actual)
-		slot.colocar_ficha(color_actual, id_jugador)
+		# Obtenemos color y ID del equipo actual
+		var current_team_id = GameManager.get_current_team_id()
+		var color_equipo = TEAM_COLORS[current_team_id]
+		var mark_str = "team_" + str(current_team_id)
+		
+		slot.colocar_ficha(color_equipo, mark_str)
 		verificar_secuencia(slot)
 		finalizar_jugada()
 		
@@ -225,22 +307,23 @@ func _on_slot_clicked(slot):
 		finalizar_jugada()
 
 func finalizar_jugada():
-	# 1. Eliminar carta usada (El GameManager ahora la enviará al descarte)
+	# 1. Eliminar carta usada de la mano del jugador actual
 	if carta_seleccionada_actual:
-		GameManager.eliminar_de_mano(GameManager.turno_actual, carta_seleccionada_actual.get_card_id())
+		GameManager.eliminar_de_mano(GameManager.current_player_index, carta_seleccionada_actual.get_card_id())
 		carta_seleccionada_actual = null
 	
-	# 2. Robar y pasar turno
+	# 2. Robar
 	robar_carta()
 	
-	# 3. Verificar si el jugador actual GANÓ (2 secuencias)
-	if _verificar_victoria_jugador():
+	# 3. Verificar Victoria (del EQUIPO actual)
+	if _verificar_victoria_equipo():
 		_finalizar_partida()
-		return # Detener el flujo de turnos
+		return
 
+	# 4. Cambiar Turno
 	GameManager.cambiar_turno()
 	
-	# 4. Refrescar UI
+	# 5. Refrescar UI
 	actualizar_ui_turnos()
 	mostrar_mano_jugador_actual()
 	actualizar_ayuda_visual_tablero()
@@ -249,7 +332,7 @@ func finalizar_jugada():
 func robar_carta():
 	var id = GameManager.draw_card()
 	if id != "":
-		GameManager.agregar_a_mano(GameManager.turno_actual, id)
+		GameManager.agregar_a_mano(GameManager.current_player_index, id)
 
 # ===============================
 # DESCARTAR (DEAD CARD)
@@ -295,23 +378,37 @@ func _carta_tiene_jugada_posible(hand_id: String) -> bool:
 # ===============================
 # LÓGICA DE SECUENCIA (Ganar)
 # ===============================
-func _verificar_victoria_jugador() -> bool:
-	if GameManager.turno_actual == 1:
-		return secuencias_j1 >= 2
-	else:
-		return secuencias_j2 >= 2
-
-func _finalizar_partida():
-	var ganador = "JUGADOR 1 (AZUL)" if GameManager.turno_actual == 1 else "JUGADOR 2 (ROJO)"
-	label_turno.text = "¡GANADOR: " + ganador + "!"
-	label_turno.add_theme_color_override("font_color", Color.GOLD)
+func _verificar_victoria_equipo() -> bool:
+	# Checamos las secuencias del EQUIPO actual
+	var current_team = GameManager.get_current_team_id()
+	var total_equipos = GameManager.total_teams_in_play
+	var secuencias_necesarias = 2
 	
+	if total_equipos == 3:
+		secuencias_necesarias = 1
+	
+	# Verificamos si alcanzaron la meta
+	return team_sequences[current_team] >= secuencias_necesarias
+	
+func _finalizar_partida():
+	# Obtener nombre del equipo ganador (para display)
+	var win_team_id = GameManager.get_current_team_id()
+	var nombre_ganador = "EQUIPO " + str(win_team_id + 1) # Equipo 1, 2 o 3
+	
+	# Color
+	var color_ganador = TEAM_COLORS[win_team_id]
+	if win_team_id == 0: nombre_ganador += " (AZUL)"
+	elif win_team_id == 1: nombre_ganador += " (ROJO)"
+	else: nombre_ganador += " (VERDE)"
+	
+	label_turno.text = "¡VICTORIA: " + nombre_ganador + "!"
+	label_turno.add_theme_color_override("font_color", color_ganador)
 
 	grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hand_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	discard_button.disabled = true
 	
-	mostrar_popup_victoria(ganador)
+	mostrar_popup_victoria(nombre_ganador, color_ganador)
 
 func verificar_secuencia(slot_central):
 	var direcciones = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(1, -1)]
@@ -320,27 +417,22 @@ func verificar_secuencia(slot_central):
 	
 	for dir in direcciones:
 		var linea: Array = [slot_central]
-		
-		# Expandir en ambas direcciones para buscar 5 fichas
 		for d in [dir, -dir]:
 			var pos = centro + d
 			while _pos_valida(pos):
 				var s = _get_slot_at(pos)
-				# Slot propio O comodín Free del tablero (esquinas)
+				# Slot del MISMO EQUIPO o Comodín
 				if s.occupied_by == id_dueno or s.card_id == "FREE":
-					if d == dir: linea.append(s) 
-					else: linea.insert(0, s)      
+					if d == dir: linea.append(s)
+					else: linea.insert(0, s)
 					pos += d
 				else:
 					break
 		
-		# Checar si hay 5 seguidos
 		if linea.size() >= 5:
-			# Extraer sub-grupos de 5 (si hay 6 o más fichas)
 			for i in range(linea.size() - 4):
 				var bloque = linea.slice(i, i + 5)
 				_procesar_secuencia_encontrada(bloque)
-
 
 func _procesar_secuencia_encontrada(slots):
 	var fichas_reutilizadas_count = 0
@@ -348,19 +440,16 @@ func _procesar_secuencia_encontrada(slots):
 		if s in fichas_en_secuencia:
 			fichas_reutilizadas_count += 1
 	
-	if fichas_reutilizadas_count > 1:
-		return
+	if fichas_reutilizadas_count > 1: return
 	
-	if GameManager.turno_actual == 1:
-		secuencias_j1 += 1
-		print("Secuencias J1: ", secuencias_j1)
-	else:
-		secuencias_j2 += 1
-		print("Secuencias J2: ", secuencias_j2)
+	# Sumar secuencia al EQUIPO actual
+	var current_team = GameManager.get_current_team_id()
+	team_sequences[current_team] += 1
+	print("Secuencia para Equipo ", current_team, ". Total: ", team_sequences[current_team])
 		
 	mostrar_popup_sequence()
 	
-	var delay_step = 0.1 
+	var delay_step = 0.1
 	var current_delay = 0.0
 	
 	for s in slots:
@@ -402,7 +491,7 @@ func _get_slot_at(pos: Vector2i):
 func _pos_valida(pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.x < 10 and pos.y >= 0 and pos.y < 10
 	
-func mostrar_popup_victoria(nombre_ganador: String):
+func mostrar_popup_victoria(nombre_ganador: String, color_equipo: Color):
 	# Creamos un CanvasLayer para que se dibuje por encima de toda la UI actual
 	var layer = CanvasLayer.new()
 	layer.layer = 100 # Un nivel alto asegura que esté al frente
@@ -416,7 +505,7 @@ func mostrar_popup_victoria(nombre_ganador: String):
 	
 	# Contenedor para centrar el texto y el botón
 	var v_box = VBoxContainer.new()
-	v_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	v_box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	v_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	overlay.add_child(v_box)
 	
@@ -425,7 +514,9 @@ func mostrar_popup_victoria(nombre_ganador: String):
 	win_label.text = "¡PARTIDA FINALIZADA!\nGANADOR: " + nombre_ganador
 	win_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	win_label.add_theme_font_size_override("font_size", 50)
+	
 	# Le damos una sombra para que se lea mejor
+	win_label.add_theme_color_override("font_color", color_equipo)
 	win_label.add_theme_constant_override("shadow_offset_x", 3)
 	win_label.add_theme_constant_override("shadow_offset_y", 3)
 	v_box.add_child(win_label)
@@ -438,11 +529,10 @@ func mostrar_popup_victoria(nombre_ganador: String):
 	# Botón de reiniciar
 	var btn_restart = Button.new()
 	btn_restart.text = "REINICIAR JUEGO"
-	btn_restart.custom_minimum_size = Vector2(250, 70)
+	btn_restart.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	v_box.add_child(btn_restart)
 	
 	# Conexión para reiniciar
 	btn_restart.pressed.connect(func(): 
-		GameManager.reiniciar_juego() # Asegúrate de llamar a limpiar el mazo
-		get_tree().reload_current_scene()
+		get_tree().change_scene_to_file(MENU_SCENE_PATH)
 	)

@@ -7,9 +7,6 @@ signal slot_clicked(slot_node)
 @onready var debug_label: Label = $Label
 @onready var chip_layer: Control = $ChipLayer
 
-const CHIP_P1 := preload("res://Assets/Chips/chips_flat_blue.png")
-const CHIP_P2 := preload("res://Assets/Chips/chips_flat_red.png")
-
 var card_id: String = ""
 var occupied_by: String = ""
 var is_playable: bool = false
@@ -93,7 +90,14 @@ func colocar_ficha(_color_ficha: Color, player_id: String) -> void:
 	# Crear chip como imagen
 	var chip := TextureRect.new()
 	chip.name = "Chip"
-	chip.texture = CHIP_P1 if player_id == "p1" else CHIP_P2
+	
+	var chip_tex = CardAssets.get_chip(player_id)
+	if chip_tex:
+		chip.texture = chip_tex
+		chip.modulate = Color(1.1, 1.1, 1.1, 1.0) 
+	else:
+		chip.modulate = _color_ficha
+		
 	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	chip.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	chip.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -120,7 +124,7 @@ func quitar_ficha() -> void:
 	if chip:
 		chip.queue_free()
 	restore_base()
-
+		
 func _notification(what):
 	if what == NOTIFICATION_RESIZED:
 		var chip := chip_layer.get_node_or_null("Chip") as Control
@@ -129,7 +133,12 @@ func _notification(what):
 
 func set_playable(state: bool) -> void:
 	is_playable = state
-
+	
+func set_locked_visual():
+	# Opción A: Oscurecer la ficha
+	if chip_layer.get_child_count() > 0:
+		var chip = chip_layer.get_child(0)
+		chip.modulate = Color(0.6, 0.6, 0.6) # Más oscuro
 
 # --- ANIMACION MOUSE ---
 func _on_mouse_entered():
