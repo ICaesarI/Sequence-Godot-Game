@@ -24,15 +24,10 @@ shadow_color = Color(0, 0, 0, 0.5019608)
 shadow_size = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r150o"]
-bg_color = Color(0.24313726, 0.15294118, 0.13725491, 1)
+border_width_left = 4
 border_width_top = 4
+border_width_right = 4
 border_width_bottom = 4
-border_color = Color(0.5529412, 0.43137255, 0.3882353, 1)
-border_blend = true
-shadow_color = Color(0, 0, 0, 0.003921569)
-shadow_size = 10
-shadow_offset = Vector2(0, 5)
-anti_aliasing = false
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kln2b"]
 content_margin_left = 20.0

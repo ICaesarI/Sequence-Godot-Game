@@ -7,13 +7,15 @@ const PAD_Y := 2
 
 
 @onready var atlas: Texture2D = preload("res://Assets/Cards/cards_atlas.png")
+
 const CHIP_TEX := {
-	"p1": preload("res://Assets/Chips/chips_flat_blue.png"),
-	"p2": preload("res://Assets/Chips/chips_flat_red.png"),
+	"team_0": preload("res://Assets/Chips/chips_flat_blue.png"),
+	"team_1": preload("res://Assets/Chips/chips_flat_red.png"), 
+	"team_2": preload("res://Assets/Chips/chips_flat_green.png"), 
 }
 
-static func get_chip(player_id: String) -> Texture2D:
-	return CHIP_TEX.get(player_id, null)
+func get_chip(team_id_str: String) -> Texture2D:
+	return CHIP_TEX.get(team_id_str, null)
 
 
 
