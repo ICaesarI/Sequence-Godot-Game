@@ -37,7 +37,7 @@ func _ready():
 		GameManager.shuffle_deck()
 	setup_board()
 	repartir_manos_iniciales()
-	actualizar_ui_turnos()
+	#actualizar_ui_turnos()
 
 # ===============================
 # TABLERO
@@ -63,36 +63,35 @@ func _resize_board_slots():
 	await get_tree().process_frame
 	if not is_inside_tree(): return
 
-	var available_w = grid.size.x
-	var available_h = grid.size.y
-	if available_w <= 0 or available_h <= 0:
-		return
+	var available_size = center_container.size
+	if available_size.x <= 0 or available_size.y <= 0: return
 
-	# Lógica para mantener celdas rectangulares 
-	var ratio := 75.0 / 110.0
-	var cols := 10.0
-	var cell_w = available_w / cols
-	var cell_h = cell_w / ratio
-
-	if cell_h * 10 > available_h and available_h > 0:
-		cell_h = available_h / 10.0
-		cell_w = cell_h * ratio
+	var card_ratio := 75.0 / 110.0
+	
+	var cell_w = available_size.x / 10.0
+	var cell_h = cell_w / card_ratio
+	
+	if (cell_h * 10.0) > available_size.y:
+		cell_h = (available_size.y * 0.95) / 10.0
+		cell_w = cell_h * card_ratio
 
 	for slot in grid.get_children():
 		slot.custom_minimum_size = Vector2(cell_w, cell_h)
+	
+	grid.queue_sort()
 
 # ===============================
 # GESTIÓN DE TURNOS Y UI
 # ===============================
 
-func actualizar_ui_turnos():
+"""func actualizar_ui_turnos():
 	if GameManager.turno_actual == 1:
 		label_turno.text = "TURNO: JUGADOR 1 (AZUL)"
 		label_turno.add_theme_color_override("font_color", COLOR_J1)
 	else:
 		label_turno.text = "TURNO: JUGADOR 2 (ROJO)"
 		label_turno.add_theme_color_override("font_color", COLOR_J2)
-	_animar_header_turno()
+	_animar_header_turno()"""
 
 func _animar_header_turno():
 	if turn_tween: turn_tween.kill()
@@ -241,7 +240,7 @@ func finalizar_jugada():
 	GameManager.cambiar_turno()
 	
 	# 4. Refrescar UI
-	actualizar_ui_turnos()
+	#actualizar_ui_turnos()
 	mostrar_mano_jugador_actual()
 	actualizar_ayuda_visual_tablero()
 
@@ -275,7 +274,7 @@ func _on_discard_pressed():
 	carta_seleccionada_actual = null
 	robar_carta() # Reglas dicen: descartas y robas nueva
 	GameManager.cambiar_turno()
-	actualizar_ui_turnos()
+	#actualizar_ui_turnos()
 	mostrar_mano_jugador_actual()
 
 func actualizar_estado_descartar():

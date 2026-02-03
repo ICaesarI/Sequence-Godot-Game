@@ -69,10 +69,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
 
 [node name="Background" type="ColorRect" parent="RootMargin"]
 layout_mode = 2
@@ -94,25 +90,12 @@ texture = SubResource("NoiseTexture2D_kln2b")
 layout_mode = 2
 theme_override_constants/separation = 18
 
-[node name="HeaderBar" type="HBoxContainer" parent="RootMargin/VBoxContainer"]
-custom_minimum_size = Vector2(0, 60)
-layout_mode = 2
-
-[node name="LabelTurno" type="Label" parent="RootMargin/VBoxContainer/HeaderBar"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 20
-text = "TURNO: JUGADOR 1"
-horizontal_alignment = 1
-
 [node name="CenterContainer" type="CenterContainer" parent="RootMargin/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="BoardAspect" type="AspectRatioContainer" parent="RootMargin/VBoxContainer/CenterContainer"]
 layout_mode = 2
-ratio = 0.68
-stretch_mode = 0
 
 [node name="BoardPanel" type="Panel" parent="RootMargin/VBoxContainer/CenterContainer/BoardAspect"]
 layout_mode = 2
@@ -123,17 +106,21 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = 32.0
-offset_bottom = 32.0
+offset_right = 39.0
+offset_bottom = 39.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 19
-theme_override_constants/margin_top = 19
-theme_override_constants/margin_right = 19
-theme_override_constants/margin_bottom = 19
+localize_numeral_system = false
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 100
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 100
 
 [node name="GridContainer" type="GridContainer" parent="RootMargin/VBoxContainer/CenterContainer/BoardAspect/BoardPanel/MarginContainer"]
+custom_minimum_size = Vector2(1, 1)
 layout_mode = 2
+size_flags_horizontal = 5
+size_flags_vertical = 5
 theme_override_constants/h_separation = 2
 theme_override_constants/v_separation = 4
 columns = 10

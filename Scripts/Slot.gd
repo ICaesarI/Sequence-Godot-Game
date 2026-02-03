@@ -27,16 +27,17 @@ func _ready():
 	pivot_offset = custom_minimum_size / 2
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	
-	# estos NO deben capturar clicks
+	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	face.set_anchors_preset(Control.PRESET_FULL_RECT) 
+
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	face.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	debug_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
-	# Guardamos el color original del slot (el fondo)
 	base_color = bg.color
 	bg.color.a = 0.75
 	
-	# --- Conexiones ---
 	gui_input.connect(_on_gui_input)
 	if not mouse_entered.is_connected(_on_mouse_entered):
 		mouse_entered.connect(_on_mouse_entered)
