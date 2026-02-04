@@ -200,6 +200,8 @@ func _kill_hover_tween():
 
 # --- ANIMACIÓN DE SECUENCIA COMPLETADA ---
 func play_sequence_anim(delay: float = 0.0) -> void:
+	var team_to_anim = GameManager.get_current_team_id()
+	
 	if delay > 0:
 		await get_tree().create_timer(delay).timeout
 		
@@ -208,14 +210,29 @@ func play_sequence_anim(delay: float = 0.0) -> void:
 	z_index = 20 # Traer al frente
 	
 	# Color dorado brillante
-	var color_gold = Color(3.0, 1.8, 0.5, 1.0) # HDR Color
-	var bg_locked = Color(0.2, 0.15, 0.05, 0.95) # Fondo oscuro dorado
+	var bg_locked = Color(0.2, 0.15, 0.05, 0.95) # Fondo oscuro dorad
+	
+	# --- LÓGICA DE COLOR MODULAR ---
+	
+	var glow_color = Color.WHITE
+	
+	match team_to_anim:
+		0: # EQUIPO AZUL (Usamos un Cian/Azul Eléctrico)
+			glow_color = Color(0.8, 1.2, 2.0) 
+		1: # EQUIPO ROJO (Usamos un Rojo Neón suave)
+			glow_color = Color(2.0, 0.85, 0.85)
+		2: # EQUIPO VERDE (Usamos un Verde Lima brillante)
+			glow_color = Color(0.83, 1.763, 0.83, 0.925)
+		_: # Fallback (Blanco brillante por si acaso)
+			glow_color = Color(1.2, 1.2, 1.2)
+	
+	# Aplicamos el color dinámico
 	
 	seq_tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	
 	# 1. Escalar y Brillar
 	seq_tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.3)
-	seq_tween.parallel().tween_property(self, "self_modulate", color_gold, 0.3)
+	seq_tween.parallel().tween_property(self,  "modulate", glow_color, 0.2)
 	
 	# 2. Regresar y fijar color de fondo
 	seq_tween.chain().tween_property(self, "scale", Vector2.ONE, 0.4)

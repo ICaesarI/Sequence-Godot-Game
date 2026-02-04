@@ -329,7 +329,7 @@ func _on_discard_pressed():
 		return 
 
 	var hand_id = carta_seleccionada_actual.get_card_id()
-	GameManager.eliminar_de_mano(GameManager.turno_actual, hand_id)
+	GameManager.eliminar_de_mano(GameManager.current_player_index, hand_id)
 	
 	# Espera breve para animación si existiera
 	if carta_seleccionada_actual.has_method("play_discard_anim"):
@@ -382,7 +382,7 @@ func _check_is_game_over() -> bool:
 	var current_team = GameManager.get_current_team_id()
 	var total_equipos = GameManager.total_teams_in_play
 	# Meta: 2 secuencias (o 1 si hay 3 equipos)
-	var meta = 1 if total_equipos == 3 else 2
+	var meta = 2 if total_equipos == 3 else 2
 	return team_sequences[current_team] >= meta
 	
 func _finalizar_partida():

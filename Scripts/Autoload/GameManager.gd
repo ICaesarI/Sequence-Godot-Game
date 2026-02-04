@@ -53,7 +53,6 @@ func setup_game(num_players: int):
 	generate_deck()
 	shuffle_deck()
 	
-"""
 # --- FUNCIÓN DE PRUEBA: SOLO JOTAS ---
 func generate_deck():
 	cards.clear()
@@ -90,6 +89,7 @@ func generate_deck():
 				cards.append(s + "_J2")
 				
 	print("Mazo generado con éxito (2 barajas). Total: ", cards.size())
+"""
 
 func shuffle_deck():
 	cards.shuffle()
