@@ -3,12 +3,19 @@
 [ext_resource type="Script" uid="uid://5rixlc3ap2s8" path="res://Scripts/Slot.gd" id="1_vqo0j"]
 
 [node name="Slot" type="Control"]
-clip_contents = true
 custom_minimum_size = Vector2(65, 95)
 layout_mode = 3
-anchors_preset = 0
-offset_right = 65.0
-offset_bottom = 95.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -32.5
+offset_top = -47.5
+offset_right = 32.5
+offset_bottom = 47.5
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_vqo0j")
 
 [node name="BG" type="ColorRect" parent="."]

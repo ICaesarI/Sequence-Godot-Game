@@ -10,7 +10,6 @@ var base_pos: Vector2
 var hover_tween: Tween
 var select_tween: Tween
 
-
 func _ready():
 	# Guardar posición base real cuando ya está en escena
 	base_pos = position
@@ -31,10 +30,13 @@ func setup(id: String):
 	else:
 		text = id
 
-	# --- ESTILO BICYCLE BLANCO ---
+	# --- ESTILO BICYCLE BLANCO SIMPLE ---
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color.WHITE
 	normal.set_corner_radius_all(5)
+	# Sombra suave para darle profundidad base
+	normal.shadow_size = 2
+	normal.shadow_offset = Vector2(1, 1)
 
 	var hover = normal.duplicate()
 	hover.bg_color = Color(0.97, 0.97, 0.97)
@@ -78,20 +80,21 @@ func _on_mouse_entered():
 	if selected: 
 		return
 
-	_kill_hover_tween()
+	_kill_tweens()
 	z_index = 10
 
 	hover_tween = create_tween()
 	hover_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	hover_tween.tween_property(self, "position", base_pos + Vector2(0, -18), 0.12)
+	# Pequeña subida
+	hover_tween.tween_property(self, "position", base_pos + Vector2(0, -15), 0.12)
 	hover_tween.parallel().tween_property(self, "rotation", deg_to_rad(randf_range(-2, 2)), 0.12)
-	hover_tween.parallel().tween_property(self, "scale", Vector2(1.04, 1.04), 0.12)
+	hover_tween.parallel().tween_property(self, "scale", Vector2(1.05, 1.05), 0.12)
 
 func _on_mouse_exited():
 	if selected:
 		return
 
-	_kill_hover_tween()
+	_kill_tweens()
 	z_index = 1
 
 	hover_tween = create_tween()
@@ -99,53 +102,77 @@ func _on_mouse_exited():
 	hover_tween.tween_property(self, "position", base_pos, 0.10)
 	hover_tween.parallel().tween_property(self, "rotation", 0.0, 0.10)
 	hover_tween.parallel().tween_property(self, "scale", Vector2.ONE, 0.10)
+	# Restaurar color normal por si acaso
+	hover_tween.parallel().tween_property(self, "modulate", Color.WHITE, 0.10)
 
 	# Al terminar, lo devolvemos al control del container
 	hover_tween.finished.connect(func ():
 		set_as_top_level(false)
 	)
-func _kill_hover_tween():
-	if hover_tween:
-		hover_tween.kill()
-		hover_tween = null
 
-# --- Seleccion ---
+func _kill_tweens():
+	if hover_tween: hover_tween.kill()
+	if select_tween: select_tween.kill()
+
+# --- SELECCION (ANIMACIÓN DE FLOTACIÓN + BRILLO) ---
 func set_selected(state: bool):
 	selected = state
-	_kill_hover_tween()
-
-	if select_tween:
-		select_tween.kill()
-		select_tween = null
-
-	var style := StyleBoxFlat.new()
-	style.set_corner_radius_all(5)
+	_kill_tweens()
 	
+	select_tween = create_tween()
+
 	if state:
-		style.bg_color = Color(0.85, 0.90, 1.00)
-		style.set_border_width_all(4)
-		style.border_color = Color.GOLD
-
 		z_index = 20
-
-		select_tween = create_tween()
 		select_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-		select_tween.tween_property(self, "position", base_pos + Vector2(0, -22), 0.14)
-		select_tween.parallel().tween_property(self, "scale", Vector2(1.10, 1.10), 0.14)
-		select_tween.parallel().tween_property(self, "rotation", 0.0, 0.10)
+		
+		# 1. Movimiento (Pop Arriba)
+		select_tween.tween_property(self, "position", base_pos + Vector2(0, -30), 0.2)
+		select_tween.parallel().tween_property(self, "scale", Vector2(1.15, 1.15), 0.2)
+		select_tween.parallel().tween_property(self, "rotation", 0.0, 0.1)
+		
+		# --- LÓGICA DE COLOR MODULAR ---
+		var current_team = GameManager.get_current_team_id() # 0: Azul, 1: Rojo, 2: Verde
+		var glow_color = Color.WHITE
+		
+		match current_team:
+			0: # EQUIPO AZUL (Usamos un Cian/Azul Eléctrico)
+				glow_color = Color(0.8, 1.2, 2.0) 
+			1: # EQUIPO ROJO (Usamos un Rojo Neón suave)
+				glow_color = Color(2.0, 0.85, 0.85)
+			2: # EQUIPO VERDE (Usamos un Verde Lima brillante)
+				glow_color = Color(0.8, 2.0, 0.8)
+			_: # Fallback (Blanco brillante por si acaso)
+				glow_color = Color(1.2, 1.2, 1.2)
+		
+		# Aplicamos el color dinámico
+		select_tween.parallel().tween_property(self, "modulate", glow_color, 0.2)
+		
+		# 2. Loop de flotación
+		select_tween.tween_callback(_start_floating_loop)
+		
 	else:
-		style.bg_color = Color.WHITE
-		style.set_border_width_all(0)
-
 		z_index = 1
-
-		select_tween = create_tween()
 		select_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-		select_tween.tween_property(self, "position", base_pos, 0.12)
-		select_tween.parallel().tween_property(self, "scale", Vector2.ONE, 0.12)
-		select_tween.parallel().tween_property(self, "rotation", 0.0, 0.12)
+		
+		# Regreso a base
+		select_tween.tween_property(self, "position", base_pos, 0.15)
+		select_tween.parallel().tween_property(self, "scale", Vector2.ONE, 0.15)
+		select_tween.parallel().tween_property(self, "rotation", 0.0, 0.15)
+		
+		# Regreso a color grisáceo normal (neutro)
+		select_tween.parallel().tween_property(self, "modulate", Color(0.9, 0.9, 0.9), 0.15)
 
-	add_theme_stylebox_override("normal", style)
-	add_theme_stylebox_override("hover", style) 
-	add_theme_stylebox_override("pressed", style)
-	add_theme_stylebox_override("focus", style)
+# Función auxiliar para el efecto de "respiración" o flotación
+func _start_floating_loop():
+	if not selected: return
+	
+	# Creamos un nuevo tween infinito para el flotado
+	if select_tween: select_tween.kill()
+	select_tween = create_tween().set_loops()
+	select_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	
+	# Flotar suavemente arriba y abajo
+	# Sube un poquito más (-35)
+	select_tween.tween_property(self, "position:y", base_pos.y - 35, 0.8)
+	# Baja un poco (-25)
+	select_tween.tween_property(self, "position:y", base_pos.y - 25, 0.8)

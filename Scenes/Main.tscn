@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://b0o82dl81mtsx"]
+[gd_scene load_steps=8 format=3 uid="uid://b0o82dl81mtsx"]
 
 [ext_resource type="Script" uid="uid://3epqf0ko1c2t" path="res://Scripts/Main.gd" id="1_r150o"]
 
@@ -8,20 +8,6 @@ fractal_type = 0
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_kln2b"]
 noise = SubResource("FastNoiseLite_idj7w")
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_idj7w"]
-bg_color = Color(0.043137256, 0.078431375, 0.07058824, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.16470589, 0.23921569, 0.21176471, 1)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-shadow_color = Color(0, 0, 0, 0.5019608)
-shadow_size = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r150o"]
 border_width_left = 4
@@ -84,49 +70,46 @@ texture = SubResource("NoiseTexture2D_kln2b")
 [node name="VBoxContainer" type="VBoxContainer" parent="RootMargin"]
 layout_mode = 2
 theme_override_constants/separation = 18
+alignment = 1
 
-[node name="CenterContainer" type="CenterContainer" parent="RootMargin/VBoxContainer"]
+[node name="Header" type="Panel" parent="RootMargin/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="BoardAspect" type="AspectRatioContainer" parent="RootMargin/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+ratio = 0.75
 
-[node name="BoardAspect" type="AspectRatioContainer" parent="RootMargin/VBoxContainer/CenterContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="RootMargin/VBoxContainer/BoardAspect"]
 layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 0
 
-[node name="BoardPanel" type="Panel" parent="RootMargin/VBoxContainer/CenterContainer/BoardAspect"]
+[node name="GridContainer" type="GridContainer" parent="RootMargin/VBoxContainer/BoardAspect/MarginContainer"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_idj7w")
-
-[node name="MarginContainer" type="MarginContainer" parent="RootMargin/VBoxContainer/CenterContainer/BoardAspect/BoardPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = 39.0
-offset_bottom = 39.0
-grow_horizontal = 2
-grow_vertical = 2
-localize_numeral_system = false
-theme_override_constants/margin_left = 40
-theme_override_constants/margin_top = 100
-theme_override_constants/margin_right = 40
-theme_override_constants/margin_bottom = 100
-
-[node name="GridContainer" type="GridContainer" parent="RootMargin/VBoxContainer/CenterContainer/BoardAspect/BoardPanel/MarginContainer"]
-custom_minimum_size = Vector2(1, 1)
-layout_mode = 2
-size_flags_horizontal = 5
-size_flags_vertical = 5
+size_flags_horizontal = 4
+size_flags_vertical = 4
 theme_override_constants/h_separation = 2
 theme_override_constants/v_separation = 4
 columns = 10
 
-[node name="HandPanel" type="Panel" parent="RootMargin/VBoxContainer"]
-custom_minimum_size = Vector2(900, 150)
+[node name="HandWrapper" type="MarginContainer" parent="RootMargin/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="HandPanel" type="Panel" parent="RootMargin/VBoxContainer/HandWrapper"]
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_r150o")
 
-[node name="MarginContainer" type="MarginContainer" parent="RootMargin/VBoxContainer/HandPanel"]
+[node name="MarginContainer" type="MarginContainer" parent="RootMargin/VBoxContainer/HandWrapper/HandPanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -138,21 +121,21 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="HandRow" type="HBoxContainer" parent="RootMargin/VBoxContainer/HandPanel/MarginContainer"]
+[node name="HandRow" type="HBoxContainer" parent="RootMargin/VBoxContainer/HandWrapper/HandPanel/MarginContainer"]
 layout_mode = 2
 alignment = 1
 
-[node name="HandContainer" type="HBoxContainer" parent="RootMargin/VBoxContainer/HandPanel/MarginContainer/HandRow"]
+[node name="HandContainer" type="HBoxContainer" parent="RootMargin/VBoxContainer/HandWrapper/HandPanel/MarginContainer/HandRow"]
 custom_minimum_size = Vector2(0, 130)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="Spacer" type="Control" parent="RootMargin/VBoxContainer/HandPanel/MarginContainer/HandRow"]
+[node name="Spacer" type="Control" parent="RootMargin/VBoxContainer/HandWrapper/HandPanel/MarginContainer/HandRow"]
 layout_mode = 2
 
-[node name="DiscardButton" type="Button" parent="RootMargin/VBoxContainer/HandPanel/MarginContainer/HandRow"]
+[node name="DiscardButton" type="Button" parent="RootMargin/VBoxContainer/HandWrapper/HandPanel/MarginContainer/HandRow"]
 custom_minimum_size = Vector2(180, 48)
 layout_mode = 2
 size_flags_vertical = 4
