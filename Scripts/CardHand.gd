@@ -14,7 +14,7 @@ func _ready():
 	# Guardar posición base real cuando ya está en escena
 	base_pos = position
 
-	# Si no conectas por el editor, conectamos aquí
+	# Conexiones de señal seguras
 	if not mouse_entered.is_connected(_on_mouse_entered):
 		mouse_entered.connect(_on_mouse_entered)
 	if not mouse_exited.is_connected(_on_mouse_exited):
@@ -24,9 +24,10 @@ func setup(id: String):
 	card_id = id
 	pivot_offset = size / 2
 	var tex := CardAssets.get_face(card_id)
+	
 	if tex:
 		art.texture = tex
-		text = ""   # quitamos texto
+		text = ""   # Quitamos texto si hay imagen
 	else:
 		text = id
 
@@ -34,7 +35,6 @@ func setup(id: String):
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color.WHITE
 	normal.set_corner_radius_all(5)
-	# Sombra suave para darle profundidad base
 	normal.shadow_size = 2
 	normal.shadow_offset = Vector2(1, 1)
 
@@ -49,14 +49,11 @@ func setup(id: String):
 	add_theme_stylebox_override("pressed", pressed_style)
 	add_theme_stylebox_override("focus", normal)
 	
-	_configurar_identidad(id)
-
-func _configurar_identidad(id: String):
+	# Configurar identidad (texto de fallback)
 	if "_" in id:
 		var parts = id.split("_")
 		var suit = parts[0]
 		var value = parts[1]
-		
 		var es_rojo = (suit == "H" or suit == "D")
 		var color_texto = Color.DARK_RED if es_rojo else Color.BLACK
 		
@@ -70,15 +67,16 @@ func _configurar_identidad(id: String):
 		actualizar_ui(id, Color.DARK_GREEN)
 
 func actualizar_ui(txt: String, color_txt: Color):
-	text = txt
-	add_theme_color_override("font_color", color_txt)
-	add_theme_color_override("font_hover_color", color_txt)
-	add_theme_color_override("font_focus_color", color_txt)
+	# Solo muestra texto si no hay textura cargada
+	if art.texture == null:
+		text = txt
+		add_theme_color_override("font_color", color_txt)
+		add_theme_color_override("font_hover_color", color_txt)
+		add_theme_color_override("font_focus_color", color_txt)
 
 # --- ANIMACIONES DE HOVER ---
 func _on_mouse_entered():
-	if selected: 
-		return
+	if selected: return
 
 	_kill_tweens()
 	z_index = 10
@@ -91,8 +89,7 @@ func _on_mouse_entered():
 	hover_tween.parallel().tween_property(self, "scale", Vector2(1.05, 1.05), 0.12)
 
 func _on_mouse_exited():
-	if selected:
-		return
+	if selected: return
 
 	_kill_tweens()
 	z_index = 1
@@ -102,19 +99,13 @@ func _on_mouse_exited():
 	hover_tween.tween_property(self, "position", base_pos, 0.10)
 	hover_tween.parallel().tween_property(self, "rotation", 0.0, 0.10)
 	hover_tween.parallel().tween_property(self, "scale", Vector2.ONE, 0.10)
-	# Restaurar color normal por si acaso
 	hover_tween.parallel().tween_property(self, "modulate", Color.WHITE, 0.10)
-
-	# Al terminar, lo devolvemos al control del container
-	hover_tween.finished.connect(func ():
-		set_as_top_level(false)
-	)
 
 func _kill_tweens():
 	if hover_tween: hover_tween.kill()
 	if select_tween: select_tween.kill()
 
-# --- SELECCION (ANIMACIÓN DE FLOTACIÓN + BRILLO) ---
+# --- SELECCION (ANIMACIÓN DE FLOTACIÓN + BRILLO DINÁMICO) ---
 func set_selected(state: bool):
 	selected = state
 	_kill_tweens()
@@ -130,24 +121,19 @@ func set_selected(state: bool):
 		select_tween.parallel().tween_property(self, "scale", Vector2(1.15, 1.15), 0.2)
 		select_tween.parallel().tween_property(self, "rotation", 0.0, 0.1)
 		
-		# --- LÓGICA DE COLOR MODULAR ---
-		var current_team = GameManager.get_current_team_id() # 0: Azul, 1: Rojo, 2: Verde
-		var glow_color = Color.WHITE
+		# --- CORRECCIÓN AQUÍ: USO DE SKINS DINÁMICAS ---
+		var current_team = GameManager.get_current_team_id()
+		var base_color = GameManager.get_team_color(current_team)
 		
-		match current_team:
-			0: # EQUIPO AZUL (Usamos un Cian/Azul Eléctrico)
-				glow_color = Color(0.8, 1.2, 2.0) 
-			1: # EQUIPO ROJO (Usamos un Rojo Neón suave)
-				glow_color = Color(2.0, 0.85, 0.85)
-			2: # EQUIPO VERDE (Usamos un Verde Lima brillante)
-				glow_color = Color(0.8, 2.0, 0.8)
-			_: # Fallback (Blanco brillante por si acaso)
-				glow_color = Color(1.2, 1.2, 1.2)
+		# Creamos un color "Neon" derivado del color base
+		var glow_color = base_color
+		glow_color.v = 1.5 # Más brillante (Valor > 1.0 simula HDR/Neon)
+		glow_color.s = 0.6 # Menos saturado para que parezca luz blanca teñida
 		
-		# Aplicamos el color dinámico
+		# Aplicamos el color dinámico al modulate
 		select_tween.parallel().tween_property(self, "modulate", glow_color, 0.2)
 		
-		# 2. Loop de flotación
+		# 2. Iniciar Loop de flotación
 		select_tween.tween_callback(_start_floating_loop)
 		
 	else:
@@ -159,20 +145,17 @@ func set_selected(state: bool):
 		select_tween.parallel().tween_property(self, "scale", Vector2.ONE, 0.15)
 		select_tween.parallel().tween_property(self, "rotation", 0.0, 0.15)
 		
-		# Regreso a color grisáceo normal (neutro)
-		select_tween.parallel().tween_property(self, "modulate", Color(0.9, 0.9, 0.9), 0.15)
+		# Regreso a color normal (Blanco/Neutro)
+		select_tween.parallel().tween_property(self, "modulate", Color.WHITE, 0.15)
 
-# Función auxiliar para el efecto de "respiración" o flotación
 func _start_floating_loop():
 	if not selected: return
 	
-	# Creamos un nuevo tween infinito para el flotado
 	if select_tween: select_tween.kill()
 	select_tween = create_tween().set_loops()
 	select_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	
-	# Flotar suavemente arriba y abajo
-	# Sube un poquito más (-35)
+	# Flotar suavemente
 	select_tween.tween_property(self, "position:y", base_pos.y - 35, 0.8)
-	# Baja un poco (-25)
 	select_tween.tween_property(self, "position:y", base_pos.y - 25, 0.8)
+	
