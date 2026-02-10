@@ -75,14 +75,13 @@ alignment = 1
 
 [node name="InfoPanel" type="PanelContainer" parent="RootMargin/MainLayout"]
 top_level = true
-clip_contents = true
 layout_mode = 2
 script = ExtResource("2_idj7w")
 
 [node name="Margin" type="MarginContainer" parent="RootMargin/MainLayout/InfoPanel"]
 layout_mode = 2
 
-[node name="HBox" type="VBoxContainer" parent="RootMargin/MainLayout/InfoPanel/Margin"]
+[node name="HBox" type="HBoxContainer" parent="RootMargin/MainLayout/InfoPanel/Margin"]
 layout_mode = 2
 alignment = 1
 

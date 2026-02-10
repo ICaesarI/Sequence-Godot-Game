@@ -66,54 +66,47 @@ func _on_screen_resized():
 	var viewport_size = get_viewport_rect().size
 	var is_portrait = viewport_size.y > viewport_size.x
 	
-	# --- A. DEFINIR ESTRUCTURA GENERAL ---
-	if is_portrait:
-		# MODO VERTICAL (Móvil) -> Header Arriba
-		if main_layout is HBoxContainer: _cambiar_contenedor_principal(true)
-		
-		# --- PORCENTAJES VERTICALES ---
-		# Header Info: 15% del alto total
-		info_panel.size_flags_stretch_ratio = 0.15
-		# Área de Juego (Tablero + Mano): 85% del alto total
-		right_side_wrapper.size_flags_stretch_ratio = 0.85
-		game_zone.size_flags_stretch_ratio = 0.70  # 70% Tablero
-		hand_wrapper.size_flags_stretch_ratio = 0.30 # 30% Mano
-	else:
-		# MODO HORIZONTAL (PC) -> Sidebar Izquierda
-		if main_layout is VBoxContainer: _cambiar_contenedor_principal(false)
-		
-		# --- PORCENTAJES HORIZONTALES ---
-		# Sidebar Info: 20% del ancho total
-		info_panel.size_flags_stretch_ratio = 0.20
-		# Área de Juego (Tablero + Mano): 80% del ancho total
-		right_side_wrapper.size_flags_stretch_ratio = 0.80
-		game_zone.size_flags_stretch_ratio = 0.75  # 75% Tablero
-		hand_wrapper.size_flags_stretch_ratio = 0.25 # 25% Mano
+	# --- 1. CONFIGURACIÓN DEL HUD (FLOTANTE) ---
+	# Forzamos que sea Top Level para que no empuje al tablero
+	info_panel.set_as_top_level(true)
+	
+	# Decidimos si el HUD se apila vertical u horizontal internamente
+	var modo_columna = is_portrait or viewport_size.x < 1000
+	info_panel.configurar_layout_responsive(modo_columna)
+	
+	# --- 2. POSICIONAMIENTO DEL HUD ---
+	await get_tree().process_frame
+	info_panel.reset_size()
+	
+	var escala = 0.7 if modo_columna else 0.85
+	info_panel.scale = Vector2(escala, escala)
+	info_panel.pivot_offset = Vector2(info_panel.size.x, 0)
+	
+	var margin = 15
+	var final_x = viewport_size.x - (info_panel.size.x * escala) - margin
+	info_panel.global_position = Vector2(final_x, margin)
 
-	# --- B. DEFINIR PROPORCIONES INTERNAS (TABLERO vs MANO) ---
-	# Esto aplica al 'right_side_wrapper' que es siempre vertical
+	# --- 3. CONFIGURACIÓN DEL TABLERO (OCUPAR TODA LA PANTALLA) ---
+	# Como el info_panel ya no "empuja", el right_side_wrapper (o game_zone) 
+	# ahora debe expandirse al 100% del espacio disponible.
+	
+	# Forzamos que el contenedor del juego use todo el espacio
+	right_side_wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_side_wrapper.size_flags_stretch_ratio = 1.0 
 	
 	if is_portrait:
-		# En móvil, el tablero necesita más espacio proporcionalmente
-		# Tablero: 75% del espacio disponible en game_wrapper
+		# En móvil: Tablero 75%, Mano 25% del alto
 		game_zone.size_flags_stretch_ratio = 0.75
-		# Mano: 25% del espacio disponible
 		hand_wrapper.size_flags_stretch_ratio = 0.25
 	else:
-		# En PC, la mano puede ser un poco más pequeña
-		# Tablero: 78%
+		# En PC: Tablero 78%, Mano 22% del alto
 		game_zone.size_flags_stretch_ratio = 0.78
-		# Mano: 22%
 		hand_wrapper.size_flags_stretch_ratio = 0.22
 
-	# Aplicar configuración de flags para asegurar que obedezcan los ratios
+	# --- 4. ACTUALIZAR CELDAS ---
 	_aplicar_flags_expansion()
-	
-	# --- C. CALCULAR TAMAÑO DE CELDAS ---
-	# Esperamos un frame para que los contenedores tomen su nuevo tamaño
 	await get_tree().process_frame
 	_resize_board_cells_by_container()
-	
 
 func _aplicar_flags_expansion():
 	# Para que stretch_ratio funcione, las flags deben ser EXPAND_FILL
@@ -126,20 +119,61 @@ func _aplicar_flags_expansion():
 	game_zone.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	hand_wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
+func _posicionar_hud_flotante(hud_node: Control, vertical: bool):
+	var screen_size = get_viewport_rect().size
+	
+	# 1. Definimos un ancho relativo (ej: 40% de la pantalla en PC, 80% en móvil)
+	var factor_ancho = 0.4 if not vertical else 0.8
+	var ancho_hud = screen_size.x * factor_ancho
+	
+	hud_node.set_as_top_level(true)
+	hud_node.anchor_left = 1.0
+	hud_node.anchor_right = 1.0
+	hud_node.anchor_top = 0.0
+	
+	# 2. Aplicamos el tamaño calculado
+	hud_node.offset_left = -ancho_hud - 20 # 20px de margen
+	hud_node.offset_right = -20
+	hud_node.offset_top = 15
+	
+	# 3. Escalado Dinámico: Si la pantalla es muy pequeña, reducimos la escala del HUD
+	# Esto evita que las etiquetas se vean gigantes en teléfonos
+	var base_width = 1280.0 # Nuestra resolución base de diseño
+	var scale_factor = clamp(screen_size.x / base_width, 0.7, 1.0)
+	hud_node.scale = Vector2(scale_factor, scale_factor)
+	
+	# Importante: Ajustar el pivote a la derecha para que escale hacia adentro
+	hud_node.pivot_offset = Vector2(ancho_hud, 0)
+
 func _cambiar_contenedor_principal(vertical: bool):
 	var nuevo_layout: BoxContainer
 	if vertical: nuevo_layout = VBoxContainer.new()
 	else: nuevo_layout = HBoxContainer.new()
 	
 	nuevo_layout.name = "MainLayout"
-	nuevo_layout.add_theme_constant_override("separation", 0) # Sin espacios muertos
+	nuevo_layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT) # Que ocupe todo
+	nuevo_layout.add_theme_constant_override("separation", 0)
 	
-	# Intercambio estándar de hijos
 	var padre = main_layout.get_parent()
 	var hijos = main_layout.get_children()
+	
 	for hijo in hijos:
 		main_layout.remove_child(hijo)
-		nuevo_layout.add_child(hijo)
+		
+		# SI EL HIJO ES EL PANEL DE JUGADORES (Cámbiale el nombre en el editor si es necesario)
+		if hijo.name == "InfoPanel" or hijo.name == "PanelJugadores":
+			# Lo volvemos flotante
+			hijo.set_as_top_level(true) 
+			padre.add_child(hijo) # Lo movemos al padre directo, fuera del MainLayout
+			_posicionar_hud_flotante(hijo, vertical)
+		else:
+			# El resto (Tablero, Mano) se quedan en el layout normal
+			nuevo_layout.add_child(hijo)
+			# Aseguramos que el tablero intente usar todo el espacio ahora que el HUD no estorba
+			if hijo.name == "TableroContainer": # Ajusta al nombre de tu nodo tablero
+				hijo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				hijo.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	
 	padre.remove_child(main_layout)
 	main_layout.queue_free()
 	padre.add_child(nuevo_layout)
@@ -506,14 +540,16 @@ func _procesar_secuencia_encontrada(slots) -> bool:
 		if not s in fichas_en_secuencia:
 			fichas_en_secuencia.append(s)
 	
+	# --- SOLUCIÓN: Actualizamos el HUD SIEMPRE, incluso si es la última secuencia ---
+	hud_script.actualizar_marcadores(team_sequences)
+	
+	var color_del_equipo = GameManager.get_team_color(current_team)
+	
+	# Si no ha ganado, mostramos el popup normal
 	if not _check_is_game_over():
-		var color_del_equipo = GameManager.get_team_color(current_team)
-		
-		# Actualizar marcadores en HUD
-		hud_script.actualizar_marcadores(team_sequences)
-		
 		mostrar_popup_sequence(color_del_equipo)
 	
+	# Animación de las fichas
 	var delay_step = 0.1
 	var current_delay = 0.0
 	for s in slots:
