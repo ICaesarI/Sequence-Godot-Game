@@ -1,14 +1,8 @@
-[gd_scene load_steps=9 format=3 uid="uid://b0o82dl81mtsx"]
+[gd_scene load_steps=8 format=3 uid="uid://b0o82dl81mtsx"]
 
 [ext_resource type="Script" uid="uid://3epqf0ko1c2t" path="res://Scripts/Main.gd" id="1_r150o"]
 [ext_resource type="Script" uid="uid://j5eo6cngnw7i" path="res://Scenes/HUDManager.gd" id="2_idj7w"]
-
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_idj7w"]
-frequency = 0.5
-fractal_type = 0
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_kln2b"]
-noise = SubResource("FastNoiseLite_idj7w")
+[ext_resource type="Texture2D" uid="uid://c6u4p3sd3n8nw" path="res://Assets/Background/velour_velvet_diff_4k.jpg" id="2_kln2b"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r150o"]
 border_width_left = 4
@@ -57,7 +51,6 @@ layout_mode = 2
 color = Color(0.05490196, 0.16470589, 0.11764706, 1)
 
 [node name="TextureRect" type="TextureRect" parent="RootMargin/Background"]
-modulate = Color(0.009145312, 0.2442224, 0.19641438, 1)
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
@@ -66,7 +59,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = SubResource("NoiseTexture2D_kln2b")
+texture = ExtResource("2_kln2b")
+expand_mode = 1
 
 [node name="MainLayout" type="VBoxContainer" parent="RootMargin"]
 layout_mode = 2

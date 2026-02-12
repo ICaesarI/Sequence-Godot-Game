@@ -1,13 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://bvwiu6nssy7b5"]
+[gd_scene load_steps=3 format=3 uid="uid://bvwiu6nssy7b5"]
 
 [ext_resource type="Script" uid="uid://dc7fpxydrttet" path="res://Scripts/MainMenu.gd" id="1_tt5f1"]
-
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_idj7w"]
-frequency = 0.5
-fractal_type = 0
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_bnhvo"]
-noise = SubResource("FastNoiseLite_idj7w")
+[ext_resource type="Texture2D" uid="uid://dk5y52vqm76w3" path="res://Assets/Background/quatrefoil_jacquard_fabric_diff_4k.jpg" id="2_853f1"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -30,7 +24,6 @@ mouse_filter = 2
 color = Color(0.05490196, 0.16470589, 0.11764706, 1)
 
 [node name="TextureRect" type="TextureRect" parent="Background2"]
-modulate = Color(0.009145312, 0.2442224, 0.19641438, 1)
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
@@ -39,7 +32,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = SubResource("NoiseTexture2D_bnhvo")
+texture = ExtResource("2_853f1")
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 custom_minimum_size = Vector2(200, 200)
@@ -111,6 +104,14 @@ size_flags_vertical = 4
 theme_override_font_sizes/font_size = 23
 text = "3"
 
+[node name="BtnOptions" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 23
+text = "Options"
+
 [node name="Control" type="Control" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
@@ -123,3 +124,19 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_font_sizes/font_size = 27
 text = "SALIR"
+
+[node name="OptionsPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="BtnVelvet" type="Button" parent="OptionsPanel"]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+
+[node name="BtnDenim" type="Button" parent="OptionsPanel"]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0

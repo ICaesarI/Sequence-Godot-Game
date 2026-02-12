@@ -10,6 +10,8 @@ var players: Array = []
 var current_player_index: int = 0  # Índice del jugador actual
 var total_teams_in_play: int = 2   # 2 o 3 equipos
 
+var background_texture_path: String = ""
+
 # --- SISTEMA DE SKINS / COLORES (NUEVO) ---
 # Aquí se guardan los colores actuales. Modifícalos para cambiar skins.
 var team_colors = {

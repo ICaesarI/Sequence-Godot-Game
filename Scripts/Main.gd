@@ -39,7 +39,12 @@ func _ready():
 	
 	# Conexión Responsive
 	get_tree().get_root().size_changed.connect(_on_screen_resized)
-
+	var bg_node = find_child("Background", true, false)
+	
+	if GameManager.background_texture_path != "":
+		bg_node.texture = load(GameManager.background_texture_path)
+		bg_node.stretch_mode = TextureRect.STRETCH_TILE
+		
 	if GameManager.players.size() == 0:
 		GameManager.setup_game(2)
 		
