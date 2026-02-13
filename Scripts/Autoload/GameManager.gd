@@ -10,6 +10,8 @@ var players: Array = []
 var current_player_index: int = 0  # Índice del jugador actual
 var total_teams_in_play: int = 2   # 2 o 3 equipos
 
+
+signal fondo_cambiado(nueva_ruta) # Avisa a las escenas que el fondo cambió
 var background_texture_path: String = ""
 
 # --- SISTEMA DE SKINS / COLORES (NUEVO) ---
@@ -24,7 +26,11 @@ var team_colors = {
 func _ready():
 	# setup_game(2) # Descomentar para pruebas rápidas
 	pass
-
+	
+func cambiar_fondo(ruta: String):
+	background_texture_path = ruta
+	fondo_cambiado.emit(ruta) # Emitimos la señal
+	
 func setup_game(num_players: int):
 	players.clear()
 	discard_pile.clear()
@@ -63,7 +69,7 @@ func set_team_color(team_id: int, new_color: Color):
 		team_colors[team_id] = new_color
 
 # --- GENERACIÓN DEL MAZO (REAL) ---
-'''
+
 func generate_deck():
 	cards.clear()
 	var suits = ["S", "C", "D", "H"]
@@ -98,7 +104,7 @@ func generate_deck():
 			cards.append(s + "_J2")
 				
 	print("!!! ALERTA: MODO DEBUG (SOLO JOTAS) !!! Cartas: ", cards.size())
-
+'''
 func shuffle_deck():
 	cards.shuffle()
 	

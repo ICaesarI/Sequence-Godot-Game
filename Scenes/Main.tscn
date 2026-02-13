@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://3epqf0ko1c2t" path="res://Scripts/Main.gd" id="1_r150o"]
 [ext_resource type="Script" uid="uid://j5eo6cngnw7i" path="res://Scenes/HUDManager.gd" id="2_idj7w"]
-[ext_resource type="Texture2D" uid="uid://c6u4p3sd3n8nw" path="res://Assets/Background/velour_velvet_diff_4k.jpg" id="2_kln2b"]
+[ext_resource type="Texture2D" uid="uid://dk5y52vqm76w3" path="res://Assets/Background/quatrefoil_jacquard_fabric_diff_4k.jpg" id="2_kln2b"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r150o"]
 border_width_left = 4

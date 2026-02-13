@@ -1,7 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://bvwiu6nssy7b5"]
+[gd_scene load_steps=4 format=3 uid="uid://bvwiu6nssy7b5"]
 
 [ext_resource type="Script" uid="uid://dc7fpxydrttet" path="res://Scripts/MainMenu.gd" id="1_tt5f1"]
 [ext_resource type="Texture2D" uid="uid://dk5y52vqm76w3" path="res://Assets/Background/quatrefoil_jacquard_fabric_diff_4k.jpg" id="2_853f1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_853f1"]
+bg_color = Color(0, 0, 0, 1)
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -127,16 +130,71 @@ text = "SALIR"
 
 [node name="OptionsPanel" type="Panel" parent="."]
 visible = false
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+self_modulate = Color(0, 0, 0, 1)
+custom_minimum_size = Vector2(400, 300)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -250.0
+offset_right = 250.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_853f1")
 
-[node name="BtnVelvet" type="Button" parent="OptionsPanel"]
+[node name="MarginContainer" type="MarginContainer" parent="OptionsPanel"]
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
+offset_left = 20.0
+offset_right = 224.0
+offset_bottom = 58.0
 
-[node name="BtnDenim" type="Button" parent="OptionsPanel"]
-layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
+[node name="MenuFondos" type="VBoxContainer" parent="OptionsPanel/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="SELECCIONAR FONDO" type="Label" parent="OptionsPanel/MarginContainer/MenuFondos"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="OptionsPanel/MarginContainer/MenuFondos"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 15
+
+[node name="Label" type="Label" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer"]
+layout_mode = 2
+text = "Background"
+
+[node name="BtnAnterior" type="Button" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "<"
+
+[node name="LblNombreFondo" type="Label" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+horizontal_alignment = 1
+clip_text = true
+
+[node name="BtnSiguiente" type="Button" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = ">"
+
+[node name="HSeparator" type="HSeparator" parent="OptionsPanel/MarginContainer/MenuFondos"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+
+[node name="BtnCerrar" type="Button" parent="OptionsPanel/MarginContainer/MenuFondos"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 10
+text = "Cerrar"

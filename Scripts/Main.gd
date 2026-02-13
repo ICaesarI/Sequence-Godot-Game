@@ -34,33 +34,65 @@ const COLOR_SLOT_NORMAL = Color(0.4, 0.4, 0.4)
 # 2. INICIALIZACIÓN
 # ==============================================================================
 func _ready():
+	# 1. Conexiones de botones y sistema
 	discard_button.pressed.connect(_on_discard_pressed)
 	discard_button.disabled = true
-	
-	# Conexión Responsive
 	get_tree().get_root().size_changed.connect(_on_screen_resized)
-	var bg_node = find_child("Background", true, false)
 	
+	# 2. Configuración del Fondo (Background)
+	# Conectamos la señal para cambios en tiempo real (p.ej. desde un menú de pausa)
+	if GameManager.has_signal("fondo_cambiado"):
+		if not GameManager.fondo_cambiado.is_connected(_actualizar_fondo_tablero):
+			GameManager.fondo_cambiado.connect(_actualizar_fondo_tablero)
+	
+	
+	
+	# Aplicamos el fondo guardado que viene del MainMenu
 	if GameManager.background_texture_path != "":
-		bg_node.texture = load(GameManager.background_texture_path)
-		bg_node.stretch_mode = TextureRect.STRETCH_TILE
-		
+		_actualizar_fondo_tablero(GameManager.background_texture_path)
+
+	# 3. Inicialización del Juego
 	if GameManager.players.size() == 0:
 		GameManager.setup_game(2)
 		
 	setup_board()
 	
-	# Configuración inicial del HUD
+	# 4. Configuración de HUD y Partida
 	if hud_script.has_method("setup_hud_inicial"):
 		hud_script.setup_hud_inicial()
 	
 	repartir_manos_iniciales()
 	actualizar_ui_turnos()
 	
-	# Ajuste inicial de pantalla
-	await get_tree().process_frame
+	# 5. Ajuste final de interfaz
 	_on_screen_resized()
 
+func _actualizar_fondo_tablero(ruta: String):
+	if ruta == "": 
+		return
+	
+	# Buscamos específicamente el TextureRect que es hijo de Background
+	var bg_node = find_child("TextureRect", true, false)
+	
+	if bg_node:
+		var tex = load(ruta)
+		if tex:
+			bg_node.texture = tex
+			bg_node.stretch_mode = TextureRect.STRETCH_TILE # Estilo alfombra
+			
+			# ASEGURAR VISIBILIDAD:
+			bg_node.show() # Por si estaba oculto
+			
+			# Si el nodo "Background" tiene un CanvasItem, forzamos que esté detrás de todo
+			if bg_node.get_parent() is Control:
+				bg_node.get_parent().z_index = -1 
+			
+			print("DEBUG: Fondo cambiado a: ", ruta)
+		else:
+			print("DEBUG ERROR: No se pudo cargar la imagen en: ", ruta)
+	else:
+		print("DEBUG ERROR: ¡No se encontró el nodo TextureRect! Revisa el nombre en el editor.")
+	
 # ==============================================================================
 # 3. RESPONSIVE DESIGN
 # ==============================================================================
