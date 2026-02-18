@@ -22,6 +22,18 @@ var team_colors = {
 	2: Color.FOREST_GREEN  # Equipo 2 (Verde Clásico)
 }
 
+# --- MÁQUINA DE ESTADOS ---
+enum GameState { SETUP, PLAYER_TURN, ANIMATING, CHECKING_WIN, GAME_OVER }
+var current_state: GameState = GameState.SETUP
+
+# Señal para avisar a Main.gd que el estado cambió
+signal state_changed(new_state)
+
+func change_state(new_state: GameState):
+	current_state = new_state
+	state_changed.emit(new_state)
+	print("Estado cambiado a: ", GameState.keys()[new_state])
+
 # --- INICIALIZACIÓN ---
 func _ready():
 	# setup_game(2) # Descomentar para pruebas rápidas
@@ -59,6 +71,8 @@ func setup_game(num_players: int):
 	
 	generate_deck()
 	shuffle_deck()
+	change_state(GameState.PLAYER_TURN)
+	print("Juego listo. Turno de: ", get_current_player_name())
 
 # --- GESTIÓN DE COLORES (SKINS) ---
 func get_team_color(team_id: int) -> Color:
@@ -156,6 +170,11 @@ func get_deck_count() -> int:
 
 # --- TURNOS ---
 func cambiar_turno():
+	current_state = GameState.ANIMATING 
+	
 	current_player_index = (current_player_index + 1) % players.size()
 	var p = get_current_player_data()
+	
 	print("Nuevo Turno: ", p.name, " (Equipo ", p.team, ")")
+	
+	change_state(GameState.PLAYER_TURN)

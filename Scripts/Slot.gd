@@ -51,7 +51,9 @@ func _ready():
 
 func _on_gui_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		emit_signal("slot_clicked", self)
+		if GameManager.current_state == GameManager.GameState.PLAYER_TURN:
+			emit_signal("slot_clicked", self)
+		
 
 # --- Configuración Inicial ---
 func setup(id: String):

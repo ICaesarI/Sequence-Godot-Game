@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 BoardData="*res://Scripts/Autoload/BoardData.gd"
 GameManager="*res://Scripts/Autoload/GameManager.gd"
 CardAssets="*res://Scripts/Autoload/CardAssets.gd"
+MultiplayerManager="*res://Scripts/Autoload/MultiplayerManager.gd"
 
 [display]
 

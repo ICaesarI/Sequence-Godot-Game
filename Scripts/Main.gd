@@ -415,13 +415,19 @@ func _obtener_tipo_movimiento(slot, hand_id: String) -> String:
 	return ""
 
 func _on_slot_clicked(slot):
+	# Validar que sea el turno del jugador y que no estemos en medio de una animación
+	if GameManager.current_state != GameManager.GameState.PLAYER_TURN:
+		return
+		
 	if not carta_seleccionada_actual: return
 	
 	var hand_id = carta_seleccionada_actual.get_card_id()
 	var accion = _obtener_tipo_movimiento(slot, hand_id)	
 	
 	if accion == "pon":
-		# Colocar ficha (Color dinámico)
+		# 1. Cambiamos a estado ANIMATING para evitar clicks extra
+		GameManager.change_state(GameManager.GameState.ANIMATING)
+		
 		var current_team_id = GameManager.get_current_team_id()
 		var color_equipo = GameManager.get_team_color(current_team_id)
 		var mark_str = "team_" + str(current_team_id)
@@ -429,29 +435,15 @@ func _on_slot_clicked(slot):
 		
 		var hubo_secuencia = verificar_secuencia(slot)
 		
-		if carta_seleccionada_actual:
-			GameManager.eliminar_de_mano(GameManager.current_player_index, carta_seleccionada_actual.get_card_id())
-			carta_seleccionada_actual = null
+		# Limpieza de mano
+		GameManager.eliminar_de_mano(GameManager.current_player_index, hand_id)
+		carta_seleccionada_actual = null
 		robar_carta()
 		
 		if hubo_secuencia:
 			if _check_is_game_over():
 				_finalizar_partida()
-				mostrar_mano_jugador_actual()
 				return 
-		
-		GameManager.cambiar_turno()
-		actualizar_ui_turnos()
-		mostrar_mano_jugador_actual()
-		actualizar_ayuda_visual_tablero()
-		
-	elif accion == "quita":
-		slot.quitar_ficha()
-		
-		if carta_seleccionada_actual:
-			GameManager.eliminar_de_mano(GameManager.current_player_index, carta_seleccionada_actual.get_card_id())
-			carta_seleccionada_actual = null
-		robar_carta()
 		
 		GameManager.cambiar_turno()
 		actualizar_ui_turnos()

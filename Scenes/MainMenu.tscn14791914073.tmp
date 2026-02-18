@@ -152,26 +152,26 @@ size_flags_vertical = 4
 theme_override_font_sizes/font_size = 27
 text = "SALIR"
 
-[node name="LobbyPanel" type="CenterContainer" parent="CenterContainer"]
-unique_name_in_owner = true
+[node name="LobbyPanel" type="PanelContainer" parent="CenterContainer/MenuPanel"]
 visible = false
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/LobbyPanel"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/MenuPanel/LobbyPanel"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/LobbyPanel/VBoxContainer"]
-layout_mode = 2
-text = "Código de Sala:"
-horizontal_alignment = 1
-
-[node name="LabelCodigoValor" type="Label" parent="CenterContainer/LobbyPanel/VBoxContainer"]
-unique_name_in_owner = true
+[node name="LabelCodigoValor" type="Label" parent="CenterContainer/MenuPanel/LobbyPanel/VBoxContainer"]
 layout_mode = 2
 
-[node name="ListaJugadores" type="ItemList" parent="CenterContainer/LobbyPanel/VBoxContainer"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(250, 200)
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/MenuPanel/LobbyPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="LabelJugadoresTitulo" type="Label" parent="CenterContainer/MenuPanel/LobbyPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="ItemList" type="ItemList" parent="CenterContainer/MenuPanel/LobbyPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="BtnIniciarPartida" type="Button" parent="CenterContainer/MenuPanel/LobbyPanel/VBoxContainer"]
 layout_mode = 2
 
 [node name="OptionsPanel" type="Panel" parent="."]
