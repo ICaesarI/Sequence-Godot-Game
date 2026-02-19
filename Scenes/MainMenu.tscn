@@ -152,6 +152,32 @@ size_flags_vertical = 4
 theme_override_font_sizes/font_size = 27
 text = "SALIR"
 
+[node name="JoinPanel" type="VBoxContainer" parent="CenterContainer"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CenterContainer/JoinPanel"]
+layout_mode = 2
+text = "Introduce el código de sala:"
+horizontal_alignment = 1
+
+[node name="IPInput" type="LineEdit" parent="CenterContainer/JoinPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ConfirmJoinButton" type="Button" parent="CenterContainer/JoinPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "CONFIRMAR"
+
+[node name="CancelJoinButton" type="Button" parent="CenterContainer/JoinPanel"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "CANCELAR"
+
 [node name="LobbyPanel" type="CenterContainer" parent="CenterContainer"]
 unique_name_in_owner = true
 visible = false
