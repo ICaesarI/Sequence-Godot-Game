@@ -176,7 +176,7 @@ text = "CONFIRMAR"
 [node name="CancelJoinButton" type="Button" parent="CenterContainer/JoinPanel"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
-text = "CANCELAR"
+text = "ATRAS"
 
 [node name="LobbyPanel" type="CenterContainer" parent="CenterContainer"]
 unique_name_in_owner = true
@@ -199,6 +199,11 @@ layout_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(250, 200)
 layout_mode = 2
+
+[node name="CancelHostButton" type="Button" parent="CenterContainer/LobbyPanel/VBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "ATRAS"
 
 [node name="OptionsPanel" type="Panel" parent="."]
 visible = false

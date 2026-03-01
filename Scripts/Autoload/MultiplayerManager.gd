@@ -9,11 +9,24 @@ var players = {}
 var codigo_sala_actual: String = ""
 var codigo_intentado: String = ""
 
+
 func _ready():
 	multiplayer.peer_connected.connect(_on_player_connected)
 	multiplayer.peer_disconnected.connect(_on_player_disconnected)
 	multiplayer.connected_to_server.connect(_on_connection_success)
-	multiplayer.connection_failed.connect(_on_connection_failed)
+	multiplayer.connection_failed.connect(_on_connection_failed)	
+
+func stop_multiplayer():
+	if peer:
+		peer.close()
+	
+	multiplayer.multiplayer_peer = null
+	
+	players.clear()
+	codigo_sala_actual = ""
+	codigo_intentado = ""
+	
+	print("Servidor/Cliente cerrado exitosamente.")
 
 func host_game(player_name: String, codigo: String):
 	players.clear()
@@ -27,7 +40,8 @@ func host_game(player_name: String, codigo: String):
 	multiplayer.multiplayer_peer = peer
 	register_player(1, local_player_name)
 	print("Servidor creado. Código: ", codigo_sala_actual)
-
+	
+	
 func join_game(player_name: String, ip_address: String, codigo: String):
 	players.clear()
 	local_player_name = player_name
@@ -44,7 +58,6 @@ func join_game(player_name: String, ip_address: String, codigo: String):
 
 func _on_connection_success():
 	var mi_id = multiplayer.get_unique_id()
-	# IMPORTANTE: Enviamos el código al Host para validar
 	rpc_id(1, "verificar_y_registrar", mi_id, local_player_name, codigo_intentado)
 
 @rpc("any_peer", "reliable")

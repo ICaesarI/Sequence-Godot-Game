@@ -31,39 +31,43 @@ var indice_actual = 0
 var fondo_temporal = ""
 
 func _ready():
-	# 1. Botones de Juego Local
+	# 1. Botones de Juego Local e Interfaz Base
 	if btn_2: btn_2.pressed.connect(func(): iniciar_partida(2))
 	if btn_3: btn_3.pressed.connect(func(): iniciar_partida(9))
 	if btn_exit: btn_exit.pressed.connect(get_tree().quit)
 	
-	# 2. Opciones y Carrusel
 	if btn_options and options_panel:
 		btn_options.pressed.connect(func(): options_panel.visible = true)
 		_setup_carrusel()
 
-	# 3. Botones de Red (Menú Principal)
+	# 2. Botones de Red (Menú Principal)
 	var host_btn = find_child("HostButton", true, false)
 	var join_btn = find_child("JoinButton", true, false)
 	if host_btn: host_btn.pressed.connect(_on_host_button_pressed)
 	if join_btn: join_btn.pressed.connect(_on_join_button_pressed)
 	
-	# 4. Botones del JoinPanel (Confirmar/Cancelar)
+	# 3. Botones del JoinPanel (Confirmar/Cancelar)
 	var confirm_join = find_child("ConfirmJoinButton", true, false)
 	var cancel_join = find_child("CancelJoinButton", true, false)
 	if confirm_join: confirm_join.pressed.connect(_on_confirm_join_button_pressed)
 	if cancel_join: cancel_join.pressed.connect(_on_cancel_join_button_pressed)
+
+	# 4. BOTÓN ATRÁS DEL LOBBY (Añade esto aquí)
+	var btn_back_lobby = lobby_panel.find_child("CancelHostButton", true, false)
+	if btn_back_lobby:
+		btn_back_lobby.pressed.connect(_on_back_from_lobby_pressed)
 	
-	# 5. Conexión al Manager
+	# 5. Conexión al Manager (Señales de Red)
 	if is_instance_valid(MultiplayerManager):
 		if not MultiplayerManager.player_list_changed.is_connected(_actualizar_lista_visual_jugadores):
 			MultiplayerManager.player_list_changed.connect(_actualizar_lista_visual_jugadores)
 	else:
-		push_error("MultiplayerManager no encontrado.")
-
+		push_error("MultiplayerManager no encontrado. Revisa tus Autoloads.")
+	
 # --- LÓGICA DE RED Y FLUJO ---
 
 func _on_host_button_pressed():
-	var nombre = player_name_input.text.strip_edges()
+	var nombre = player_name_input.text.strip_edges().to_upper()
 	if nombre == "":
 		_marcar_error_nombre()
 		return
@@ -109,6 +113,16 @@ func _on_confirm_join_button_pressed():
 func _on_cancel_join_button_pressed():
 	join_panel.hide()
 	menu_panel.show()
+
+func _on_back_from_lobby_pressed():
+	if is_instance_valid(MultiplayerManager):
+		MultiplayerManager.stop_multiplayer()
+	
+	lobby_panel.hide()
+	menu_panel.show()
+	
+	if lista_jugadores:
+		lista_jugadores.clear()
 
 func _actualizar_lista_visual_jugadores():
 	if lista_jugadores:

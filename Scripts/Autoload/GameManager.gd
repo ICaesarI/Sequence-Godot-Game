@@ -83,7 +83,7 @@ func set_team_color(team_id: int, new_color: Color):
 		team_colors[team_id] = new_color
 
 # --- GENERACIÓN DEL MAZO (REAL) ---
-
+'''
 func generate_deck():
 	cards.clear()
 	var suits = ["S", "C", "D", "H"]
@@ -118,7 +118,7 @@ func generate_deck():
 			cards.append(s + "_J2")
 				
 	print("!!! ALERTA: MODO DEBUG (SOLO JOTAS) !!! Cartas: ", cards.size())
-'''
+
 func shuffle_deck():
 	cards.shuffle()
 	
