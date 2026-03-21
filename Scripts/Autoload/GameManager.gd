@@ -36,18 +36,27 @@ func change_state(new_state: GameState):
 
 # --- INICIALIZACIÓN ---
 func _ready():
-	# setup_game(2) # Descomentar para pruebas rápidas
-	pass
+	if not multiplayer.has_multiplayer_peer():
+		print("Iniciando en modo local por defecto...")
+	else:
+		print("Esperando señal del servidor para iniciar...")
 	
 func cambiar_fondo(ruta: String):
 	background_texture_path = ruta
 	fondo_cambiado.emit(ruta) # Emitimos la señal
 	
 func setup_game(num_players: int):
+	# ESCUDO: Si ya hay jugadores en el array (cargados por red), 
+	# abortamos esta función para no sobrescribir los nombres reales.
+	if players.size() > 0 and multiplayer.has_multiplayer_peer():
+		print("DEBUG: Bloqueado inicio local accidental. Ya existe una sesión de red.")
+		return
+
 	players.clear()
 	discard_pile.clear()
 	cards.clear()
 	current_player_index = 0
+	print("DEBUG: Iniciando MODO LOCAL")
 	
 	# Regla oficial Sequence: Divisible por 3 -> 3 Equipos. Si no -> 2 Equipos.
 	if num_players % 3 == 0:
@@ -61,13 +70,14 @@ func setup_game(num_players: int):
 		
 		var new_player = {
 			"id": i,
-			"name": "JUGADOR " + str(i + 1), # Nombre por defecto
+			"name": "JUGADOR " + str(i + 1), # Nombre por defecto para local
 			"team": assigned_team,
-			"hand": []
+			"hand": [],
+			"net_id": 1 # ID por defecto para autoridad local
 		}
 		players.append(new_player)
 	
-	print("--- NUEVA PARTIDA --- Jugadores: ", num_players, " | Equipos: ", total_teams_in_play)
+	print("--- NUEVA PARTIDA LOCAL --- Jugadores: ", num_players, " | Equipos: ", total_teams_in_play)
 	
 	generate_deck()
 	shuffle_deck()
@@ -151,30 +161,108 @@ func eliminar_de_mano(player_index: int, card_id: String):
 	if card_id in p_hand:
 		p_hand.erase(card_id)
 		discard_pile.append(card_id) 
-
 func get_mano_actual() -> Array:
+	# SI NO HAY JUGADORES (Cargando red o error)
+	if players.is_empty():
+		return [] 
+	
+	# SI EL ÍNDICE ES INVÁLIDO POR ALGUNA RAZÓN
+	if current_player_index >= players.size():
+		return []
+		
 	return players[current_player_index]["hand"]
 
 # --- INFORMACIÓN ---
+# --- INFORMACIÓN (REPARADO) ---
 func get_current_player_data() -> Dictionary:
+	if players.size() == 0:
+		return {"id": -1, "name": "Cargando...", "team": 0, "hand": []}
 	return players[current_player_index]
 
-func get_current_team_id() -> int:
-	return players[current_player_index]["team"]
-
 func get_current_player_name() -> String:
+	if players.size() == 0: 
+		return "Esperando..."
 	return players[current_player_index]["name"]
+
+func get_current_team_id() -> int:
+	if players.size() == 0: 
+		return 0
+	return players[current_player_index]["team"]
 
 func get_deck_count() -> int:
 	return cards.size()
 
 # --- TURNOS ---
 func cambiar_turno():
+	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+		ejecutar_cambio_turno_remoto.rpc()
+	elif not multiplayer.has_multiplayer_peer():
+		_logica_interna_cambio_turno()
+
+@rpc("authority", "reliable", "call_local")
+func ejecutar_cambio_turno_remoto():
+	_logica_interna_cambio_turno()
+
+func _logica_interna_cambio_turno():
+	if players.size() == 0:
+		print("ERROR: Intento de cambio de turno sin jugadores cargados.")
+		return
+
 	current_state = GameState.ANIMATING 
 	
 	current_player_index = (current_player_index + 1) % players.size()
+	
 	var p = get_current_player_data()
-	
-	print("Nuevo Turno: ", p.name, " (Equipo ", p.team, ")")
-	
+	print("Nuevo Turno Sincronizado: ", p.name)
 	change_state(GameState.PLAYER_TURN)
+
+
+# --- LÓGICA EXCLUSIVA PARA RED ---
+
+func preparar_partida_red(diccionario_jugadores: Dictionary):
+	if not multiplayer.is_server(): return
+	
+	# El servidor le dice a TODOS (incluyéndose a sí mismo) que registren a los jugadores
+	registrar_jugadores_en_todos_los_peers.rpc(diccionario_jugadores)
+
+@rpc("authority", "reliable", "call_local")
+func registrar_jugadores_en_todos_los_peers(diccionario_jugadores: Dictionary):
+	print("Recibiendo diccionario de jugadores por RPC...")
+	players.clear()
+	current_player_index = 0
+	
+	var ids_ordenados = diccionario_jugadores.keys()
+	ids_ordenados.sort()
+	
+	total_teams_in_play = 3 if ids_ordenados.size() % 3 == 0 else 2
+	
+	for i in range(ids_ordenados.size()):
+		var net_id = ids_ordenados[i]
+		players.append({
+			"id": i,
+			"net_id": net_id,
+			"name": diccionario_jugadores[net_id],
+			"team": i % total_teams_in_play,
+			"hand": []
+		})
+	
+	print("REGISTRO COMPLETO: Jugadores listos en este peer: ", players.size())
+	
+	# Solo después de que todos registraron, el servidor manda el mazo
+	if multiplayer.is_server():
+		generate_deck()
+		shuffle_deck()
+		activar_juego_remoto.rpc(cards)
+
+@rpc("authority", "reliable", "call_local")
+func activar_juego_remoto(mazo_servidor):
+	cards = mazo_servidor
+	print("Juego Activado. Mazo recibido. Mi ID es: ", multiplayer.get_unique_id())
+	change_state(GameState.PLAYER_TURN)
+
+@rpc("authority", "reliable", "call_local")
+func sincronizar_y_comenzar(mazo_servidor):
+	cards = mazo_servidor
+	current_player_index = 0
+	change_state(GameState.PLAYER_TURN)
+	print("Cliente: Mazo recibido. Jugadores listos: ", players.size())

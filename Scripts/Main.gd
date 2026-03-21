@@ -34,38 +34,46 @@ const COLOR_SLOT_NORMAL = Color(0.4, 0.4, 0.4)
 # 2. INICIALIZACIÓN
 # ==============================================================================
 func _ready():
-	# 1. Conexiones de botones y sistema
+	# 1. Conexiones de botones y sistema (ESTO LO HACEN TODOS)
 	discard_button.pressed.connect(_on_discard_pressed)
 	discard_button.disabled = true
 	get_tree().get_root().size_changed.connect(_on_screen_resized)
 	
-	# 2. Configuración del Fondo (Background)
-	# Conectamos la señal para cambios en tiempo real (p.ej. desde un menú de pausa)
+	# 2. Configuración del Fondo (ESTO LO HACEN TODOS)
 	if GameManager.has_signal("fondo_cambiado"):
 		if not GameManager.fondo_cambiado.is_connected(_actualizar_fondo_tablero):
 			GameManager.fondo_cambiado.connect(_actualizar_fondo_tablero)
 	
-	
-	
-	# Aplicamos el fondo guardado que viene del MainMenu
 	if GameManager.background_texture_path != "":
 		_actualizar_fondo_tablero(GameManager.background_texture_path)
 
-	# 3. Inicialización del Juego
-	if GameManager.players.size() == 0:
-		GameManager.setup_game(2)
-		
+	# 3. Inicialización Controlada (AQUÍ ESTÁ EL CAMBIO)
+	if not multiplayer.has_multiplayer_peer():
+		# MODO LOCAL: Si no hay red, iniciamos como siempre
+		if GameManager.players.size() == 0:
+			GameManager.setup_game(2)
+		iniciar_flujo_partida()
+	else:
+		# MODO RED: No llamamos a setup_game. 
+		# Esperamos a que MultiplayerManager llame a preparar_partida_red
+		print("Main: Esperando a que el Servidor sincronice la partida...")
+		# Conectamos una señal o esperamos un pequeño tiempo para iniciar visualmente
+		await get_tree().create_timer(0.5).timeout
+		iniciar_flujo_partida()
+
+	# 4. Ajuste final de interfaz
+	_on_screen_resized()
+
+func iniciar_flujo_partida():
 	setup_board()
-	
-	# 4. Configuración de HUD y Partida
 	if hud_script.has_method("setup_hud_inicial"):
 		hud_script.setup_hud_inicial()
 	
-	repartir_manos_iniciales()
-	actualizar_ui_turnos()
+	# Solo repartimos manos si somos el Host o si es local
+	if not multiplayer.has_multiplayer_peer() or multiplayer.is_server():
+		repartir_manos_iniciales()
 	
-	# 5. Ajuste final de interfaz
-	_on_screen_resized()
+	actualizar_ui_turnos()
 
 func _actualizar_fondo_tablero(ruta: String):
 	if ruta == "": 
@@ -78,10 +86,12 @@ func _actualizar_fondo_tablero(ruta: String):
 		var tex = load(ruta)
 		if tex:
 			bg_node.texture = tex
-			bg_node.stretch_mode = TextureRect.STRETCH_TILE # Estilo alfombra
+			bg_node.stretch_mode = TextureRect.STRETCH_TILE 
+			# Estilo alfombra
 			
 			# ASEGURAR VISIBILIDAD:
-			bg_node.show() # Por si estaba oculto
+			bg_node.show() 
+			# Por si estaba oculto
 			
 			# Si el nodo "Background" tiene un CanvasItem, forzamos que esté detrás de todo
 			if bg_node.get_parent() is Control:
@@ -188,7 +198,8 @@ func _cambiar_contenedor_principal(vertical: bool):
 	else: nuevo_layout = HBoxContainer.new()
 	
 	nuevo_layout.name = "MainLayout"
-	nuevo_layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT) # Que ocupe todo
+	nuevo_layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT) 
+	# Que ocupe todo
 	nuevo_layout.add_theme_constant_override("separation", 0)
 	
 	var padre = main_layout.get_parent()
@@ -337,24 +348,42 @@ func _animar_cambio_color_panel(target_color: Color):
 	color_tween.tween_property(style_box, "bg_color", dark_bg, 0.4)
 
 func repartir_manos_iniciales():
-	var num_players = GameManager.players.size()
-	var cards_per_hand = 7 
-	match num_players:
-		2: cards_per_hand = 7
-		3, 4: cards_per_hand = 6
-		6: cards_per_hand = 5
-		8, 9: cards_per_hand = 4
-		10, 12: cards_per_hand = 3
-	
-	var needs_deal = true
-	if not GameManager.players[0]["hand"].is_empty():
-		needs_deal = false
+	# 1. Si ya hay cartas, no repartimos (evita duplicados al recargar)
+	if not GameManager.get_mano_actual().is_empty():
+		mostrar_mano_jugador_actual()
+		return
+
+	# 2. Solo el Servidor (o el modo Local) decide qué cartas salen
+	if not multiplayer.has_multiplayer_peer() or multiplayer.is_server():
+		var num_players = GameManager.players.size()
+		var cards_per_hand = 7 
 		
-	if needs_deal:
+		match num_players:
+			2: cards_per_hand = 7
+			3, 4: cards_per_hand = 6
+			6: cards_per_hand = 5
+			8, 9: cards_per_hand = 4
+			10, 12: cards_per_hand = 3
+		
 		for i in range(cards_per_hand):
 			for p_index in range(num_players):
-				GameManager.agregar_a_mano(p_index, GameManager.draw_card())
+				var carta = GameManager.draw_card()
+				
+				if not multiplayer.has_multiplayer_peer():
+					# MODO LOCAL: Agregamos directo
+					GameManager.agregar_a_mano(p_index, carta)
+				else:
+					# MODO RED: El servidor le avisa a todos quién recibe qué
+					# Usamos 'call_local' para que el Host también ejecute la función
+					sincronizar_carta_repartida.rpc(p_index, carta)
 
+	# 3. Actualizamos la vista
+	mostrar_mano_jugador_actual()
+
+@rpc("authority", "reliable", "call_local")
+func sincronizar_carta_repartida(p_index: int, card_id: String):
+	GameManager.agregar_a_mano(p_index, card_id)
+	# Si es mi propia mano la que cambió, refresco mi UI
 	mostrar_mano_jugador_actual()
 
 func mostrar_mano_jugador_actual():
@@ -415,40 +444,64 @@ func _obtener_tipo_movimiento(slot, hand_id: String) -> String:
 	return ""
 
 func _on_slot_clicked(slot):
-	# Validar que sea el turno del jugador y que no estemos en medio de una animación
+	# 1. Validaciones de turno y estado
 	if GameManager.current_state != GameManager.GameState.PLAYER_TURN:
 		return
-		
-	if not carta_seleccionada_actual: return
-	
+	if not carta_seleccionada_actual: 
+		return
+
+	# 2. VALIDACIÓN DE RED: ¿Soy yo el que tiene el turno?
+	if multiplayer.has_multiplayer_peer():
+		var datos_turno = GameManager.get_current_player_data()
+		if datos_turno.net_id != multiplayer.get_unique_id():
+			print("No es tu turno. Espera a: ", datos_turno.name)
+			return
+
+	# 3. Identificamos la jugada
 	var hand_id = carta_seleccionada_actual.get_card_id()
 	var accion = _obtener_tipo_movimiento(slot, hand_id)	
 	
 	if accion == "pon":
-		# 1. Cambiamos a estado ANIMATING para evitar clicks extra
-		GameManager.change_state(GameManager.GameState.ANIMATING)
-		
-		var current_team_id = GameManager.get_current_team_id()
-		var color_equipo = GameManager.get_team_color(current_team_id)
-		var mark_str = "team_" + str(current_team_id)
-		slot.colocar_ficha(color_equipo, mark_str)
-		
-		var hubo_secuencia = verificar_secuencia(slot)
-		
-		# Limpieza de mano
-		GameManager.eliminar_de_mano(GameManager.current_player_index, hand_id)
+		# En lugar de ejecutar local, llamamos al RPC
+		var slot_index = slot.get_index()
+		ejecutar_jugada_sincronizada.rpc(slot_index, hand_id)
+
+@rpc("any_peer", "call_local", "reliable")
+func ejecutar_jugada_sincronizada(slot_index: int, card_id_usada: String):
+	# 1. Bloqueamos el estado para evitar clics dobles durante la animación
+	GameManager.change_state(GameManager.GameState.ANIMATING)
+	
+	var slot = grid.get_child(slot_index)
+	var current_team_id = GameManager.get_current_team_id()
+	var color_equipo = GameManager.get_team_color(current_team_id)
+	var mark_str = "team_" + str(current_team_id)
+	
+	# 2. Colocamos la ficha visual en TODOS los peers
+	slot.colocar_ficha(color_equipo, mark_str)
+	
+	# 3. Verificamos secuencia (Importante: todos deben saber si alguien ganó)
+	var hubo_secuencia = verificar_secuencia(slot)
+	
+	# 4. Cada uno limpia su propia mano y roba (si es su turno)
+	if multiplayer.get_unique_id() == multiplayer.get_remote_sender_id() or (multiplayer.is_server() and multiplayer.get_remote_sender_id() == 0):
+		GameManager.eliminar_de_mano(GameManager.current_player_index, card_id_usada)
 		carta_seleccionada_actual = null
 		robar_carta()
-		
-		if hubo_secuencia:
-			if _check_is_game_over():
-				_finalizar_partida()
-				return 
-		
-		GameManager.cambiar_turno()
-		actualizar_ui_turnos()
 		mostrar_mano_jugador_actual()
-		actualizar_ayuda_visual_tablero()
+
+	# 5. Gestión de Victoria
+	if hubo_secuencia:
+		if _check_is_game_over():
+			_finalizar_partida()
+			return 
+	
+	# 6. Solo el servidor ordena el cambio de turno oficial
+	if multiplayer.is_server():
+		GameManager.cambiar_turno()
+	
+	# 7. Actualizar UI local
+	actualizar_ui_turnos()
+	actualizar_ayuda_visual_tablero()
 
 func robar_carta():
 	var id = GameManager.draw_card()

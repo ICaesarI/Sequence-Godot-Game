@@ -1,6 +1,5 @@
 extends Control
 
-# Nodos Principales
 @onready var btn_2 = find_child("Btn2Players", true, false)
 @onready var btn_3 = find_child("Btn3Players", true, false)
 @onready var btn_exit = find_child("BtnExit", true, false)
@@ -8,10 +7,9 @@ extends Control
 @onready var options_panel = find_child("OptionsPanel", true, false)
 @onready var menu_bg = find_child("TextureRect", true, false)
 
-# Nodos de Contenedores (Usa % si activaste Unique Names)
 @onready var menu_panel = $CenterContainer/MenuPanel
 @onready var lobby_panel = $CenterContainer/LobbyPanel
-@onready var join_panel = %JoinPanel # Panel intermedio para código/IP
+@onready var join_panel = %JoinPanel 
 @onready var lbl_codigo_valor = $CenterContainer/LobbyPanel/VBoxContainer/LabelCodigoValor
 @onready var player_name_input = $CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer/PlayerNameInput
 @onready var ip_input = %IPInput
@@ -19,7 +17,6 @@ extends Control
 
 const GAME_SCENE_PATH = "res://Scenes/Main.tscn"
 
-# Configuración de Fondos
 var lista_fondos = [
 	{"nombre": "Terciopelo Rojo", "ruta": "res://Assets/Background/velour_velvet_diff_4k.jpg"},
 	{"nombre": "Crepe Georgette", "ruta": "res://Assets/Background/crepe_georgette_diff_4k.jpg"},
@@ -31,7 +28,6 @@ var indice_actual = 0
 var fondo_temporal = ""
 
 func _ready():
-	# 1. Botones de Juego Local e Interfaz Base
 	if btn_2: btn_2.pressed.connect(func(): iniciar_partida(2))
 	if btn_3: btn_3.pressed.connect(func(): iniciar_partida(9))
 	if btn_exit: btn_exit.pressed.connect(get_tree().quit)
@@ -40,31 +36,26 @@ func _ready():
 		btn_options.pressed.connect(func(): options_panel.visible = true)
 		_setup_carrusel()
 
-	# 2. Botones de Red (Menú Principal)
 	var host_btn = find_child("HostButton", true, false)
 	var join_btn = find_child("JoinButton", true, false)
 	if host_btn: host_btn.pressed.connect(_on_host_button_pressed)
 	if join_btn: join_btn.pressed.connect(_on_join_button_pressed)
 	
-	# 3. Botones del JoinPanel (Confirmar/Cancelar)
 	var confirm_join = find_child("ConfirmJoinButton", true, false)
 	var cancel_join = find_child("CancelJoinButton", true, false)
 	if confirm_join: confirm_join.pressed.connect(_on_confirm_join_button_pressed)
 	if cancel_join: cancel_join.pressed.connect(_on_cancel_join_button_pressed)
 
-	# 4. BOTÓN ATRÁS DEL LOBBY (Añade esto aquí)
 	var btn_back_lobby = lobby_panel.find_child("CancelHostButton", true, false)
 	if btn_back_lobby:
 		btn_back_lobby.pressed.connect(_on_back_from_lobby_pressed)
 	
-	# 5. Conexión al Manager (Señales de Red)
 	if is_instance_valid(MultiplayerManager):
 		if not MultiplayerManager.player_list_changed.is_connected(_actualizar_lista_visual_jugadores):
 			MultiplayerManager.player_list_changed.connect(_actualizar_lista_visual_jugadores)
 	else:
 		push_error("MultiplayerManager no encontrado. Revisa tus Autoloads.")
 	
-# --- LÓGICA DE RED Y FLUJO ---
 
 func _on_host_button_pressed():
 	var nombre = player_name_input.text.strip_edges().to_upper()
@@ -83,8 +74,7 @@ func _on_host_button_pressed():
 		_actualizar_lista_visual_jugadores()
 
 func _on_join_button_pressed():
-	# Al presionar Join en el menú, solo abrimos el panel para pedir IP/Código
-	var nombre = player_name_input.text.strip_edges()
+	var nombre = player_name_input.text.strip_edges().to_upper()
 	if nombre == "":
 		_marcar_error_nombre()
 		return
@@ -93,7 +83,7 @@ func _on_join_button_pressed():
 	join_panel.show()
 
 func _on_confirm_join_button_pressed():
-	var nombre = player_name_input.text.strip_edges()
+	var nombre = player_name_input.text.strip_edges().to_upper()
 	var codigo = ip_input.text.strip_edges().to_upper()
 	
 	if nombre == "" or codigo == "":
@@ -131,10 +121,15 @@ func _actualizar_lista_visual_jugadores():
 			var nombre_jugador = MultiplayerManager.players[id]
 			var item_text = nombre_jugador + ( " (Host)" if id == 1 else "" )
 			lista_jugadores.add_item(item_text)
-	else:
-		print("Error: No se encontró el nodo ListaJugadores")
+		
+		var btn_start = lobby_panel.find_child("StartGameButton", true, false)
+		if btn_start:
+			var es_host = (multiplayer.get_unique_id() == 1)
+			btn_start.visible = es_host
+			
+			if not btn_start.pressed.is_connected(_on_start_game_pressed):
+				btn_start.pressed.connect(_on_start_game_pressed)
 
-# --- FUNCIONES DE SOPORTE ---
 
 func generar_codigo_sala() -> String:
 	var caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -142,6 +137,13 @@ func generar_codigo_sala() -> String:
 	for i in range(5):
 		res += caracteres[randi() % caracteres.length()]
 	return res
+
+func _on_start_game_pressed():
+	if multiplayer.is_server():
+		var numero_de_jugadores = MultiplayerManager.players.size()
+		print("Host iniciando partida con ", numero_de_jugadores, " jugadores.")
+		
+		MultiplayerManager.rpc("iniciar_partida_remota", numero_de_jugadores)
 
 func _marcar_error_nombre():
 	player_name_input.placeholder_text = "¡NOMBRE REQUERIDO!"
@@ -153,8 +155,8 @@ func _marcar_error_nombre():
 func iniciar_partida(n):
 	GameManager.setup_game(n)
 	get_tree().change_scene_to_file(GAME_SCENE_PATH)
-
-# --- CARRUSEL DE OPCIONES ---
+	
+	
 
 func _setup_carrusel():
 	var b_ant = options_panel.find_child("BtnAnterior", true, false)

@@ -17,16 +17,17 @@ func _ready():
 	multiplayer.connection_failed.connect(_on_connection_failed)	
 
 func stop_multiplayer():
+	multiplayer.multiplayer_peer = null
+	
 	if peer:
 		peer.close()
-	
-	multiplayer.multiplayer_peer = null
+		peer = ENetMultiplayerPeer.new() 
 	
 	players.clear()
 	codigo_sala_actual = ""
 	codigo_intentado = ""
-	
-	print("Servidor/Cliente cerrado exitosamente.")
+	player_list_changed.emit() 
+	print("Red reseteada.")
 
 func host_game(player_name: String, codigo: String):
 	players.clear()
@@ -45,7 +46,7 @@ func host_game(player_name: String, codigo: String):
 func join_game(player_name: String, ip_address: String, codigo: String):
 	players.clear()
 	local_player_name = player_name
-	codigo_intentado = codigo.to_upper() # Guardamos el código antes de conectar
+	codigo_intentado = codigo.to_upper() 
 	
 	multiplayer.multiplayer_peer = null
 	peer = ENetMultiplayerPeer.new()
@@ -68,9 +69,7 @@ func verificar_y_registrar(id, nombre, codigo_enviado):
 	
 	if codigo_enviado == codigo_sala_actual:
 		register_player(id, nombre)
-		# Sincronizar a todos
 		rpc("register_player", id, nombre)
-		# Mandar lista al nuevo
 		rpc_id(id, "register_player", 1, local_player_name)
 		for p_id in players:
 			if p_id != id: rpc_id(id, "register_player", p_id, players[p_id])
@@ -78,12 +77,18 @@ func verificar_y_registrar(id, nombre, codigo_enviado):
 		print("CÓDIGO ERRÓNEO. Expulsando...")
 		peer.disconnect_peer(id)
 
-func _on_player_connected(id):
-	pass # La validación ahora la hace verificar_y_registrar
+func _on_player_connected(_id):
+	pass 
 
 func _on_player_disconnected(id):
-	players.erase(id)
-	player_list_changed.emit()
+	if players.has(id):
+		var nombre_saliente = players[id]
+		players.erase(id)
+		player_list_changed.emit()
+		
+		if multiplayer.is_server():
+			rpc("remover_jugador_remoto", id)
+			print("Jugador ", nombre_saliente, " se ha ido. Avisando a todos.")
 
 func _on_connection_failed():
 	multiplayer.multiplayer_peer = null
@@ -91,6 +96,23 @@ func _on_connection_failed():
 	player_list_changed.emit()
 
 @rpc("any_peer", "reliable")
-func register_player(id, name):
-	players[id] = name
+func remover_jugador_remoto(id):
+	if players.has(id):
+		players.erase(id)
+		player_list_changed.emit()
+
+@rpc("any_peer", "reliable")
+func register_player(id, p_name):
+	players[id] = p_name
 	player_list_changed.emit()
+	
+@rpc("authority", "reliable", "call_local")
+func iniciar_partida_remota(n: int):
+	get_tree().change_scene_to_file("res://Scenes/Main.tscn")
+	
+	await get_tree().create_timer(0.3).timeout
+	
+	if multiplayer.is_server():
+		GameManager.preparar_partida_red(players)
+	
+	
