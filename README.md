@@ -103,4 +103,3 @@ Feel free to reach out for collaboration or reporting bugs:
 
 ---
 
-**Developed with ❤️ by [ICaesarI](https://github.com/ICaesarI)**
