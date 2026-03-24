@@ -1,12 +1,13 @@
-[gd_scene load_steps=4 format=3 uid="uid://bvwiu6nssy7b5"]
+[gd_scene format=3 uid="uid://bvwiu6nssy7b5"]
 
 [ext_resource type="Script" uid="uid://dc7fpxydrttet" path="res://Scripts/MainMenu.gd" id="1_tt5f1"]
 [ext_resource type="Texture2D" uid="uid://dk5y52vqm76w3" path="res://Assets/Background/quatrefoil_jacquard_fabric_diff_4k.jpg" id="2_853f1"]
+[ext_resource type="FontFile" uid="uid://g6mff1bnvivp" path="res://Assets/FuentesTexto/PixelOperator-Bold.ttf" id="3_8saeu"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_853f1"]
 bg_color = Color(0, 0, 0, 1)
 
-[node name="MainMenu" type="Control"]
+[node name="MainMenu" type="Control" unique_id=1293417787]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -16,7 +17,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_tt5f1")
 
-[node name="Background2" type="ColorRect" parent="."]
+[node name="Background2" type="ColorRect" parent="." unique_id=150274206]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -26,7 +27,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.05490196, 0.16470589, 0.11764706, 1)
 
-[node name="TextureRect" type="TextureRect" parent="Background2"]
+[node name="TextureRect" type="TextureRect" parent="Background2" unique_id=1308545500]
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
@@ -37,7 +38,7 @@ grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("2_853f1")
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1602074973]
 custom_minimum_size = Vector2(200, 200)
 layout_mode = 1
 anchors_preset = 15
@@ -47,12 +48,12 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="MenuPanel" type="PanelContainer" parent="CenterContainer"]
+[node name="MenuPanel" type="PanelContainer" parent="CenterContainer" unique_id=1028472201]
 custom_minimum_size = Vector2(500, 500)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/MenuPanel"]
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/MenuPanel" unique_id=525335087]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -62,36 +63,37 @@ theme_override_constants/margin_top = 40
 theme_override_constants/margin_right = 40
 theme_override_constants/margin_bottom = 40
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer" unique_id=1047605976]
 custom_minimum_size = Vector2(500, 500)
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="Label" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer"]
+[node name="Label" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer" unique_id=990991320]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("3_8saeu")
 theme_override_font_sizes/font_size = 47
 text = "SEQUENCE"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer" unique_id=684660449]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Label2" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer"]
+[node name="Label2" type="Label" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer" unique_id=122054100]
 layout_mode = 2
 theme_override_font_sizes/font_size = 25
 text = "Selecciona jugadores"
 horizontal_alignment = 1
 
-[node name="HBoxContainer" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer"]
+[node name="HBoxContainer" type="VBoxContainer" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer" unique_id=1091224053]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="PlayerNameInput" type="LineEdit" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="PlayerNameInput" type="LineEdit" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=197376077]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 placeholder_text = "Your Name"
@@ -99,7 +101,7 @@ alignment = 1
 max_length = 10
 expand_to_text_length = true
 
-[node name="HostButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="HostButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1467569858]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -107,7 +109,7 @@ size_flags_vertical = 4
 theme_override_font_sizes/font_size = 23
 text = "Create Game"
 
-[node name="JoinButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="JoinButton" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1695770780]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -115,7 +117,7 @@ size_flags_vertical = 4
 theme_override_font_sizes/font_size = 23
 text = "Join Game"
 
-[node name="Btn2Players" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="Btn2Players" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=847782973]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -123,7 +125,7 @@ size_flags_vertical = 4
 theme_override_font_sizes/font_size = 23
 text = "2 "
 
-[node name="Btn3Players" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="Btn3Players" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=883951986]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -131,7 +133,7 @@ size_flags_vertical = 4
 theme_override_font_sizes/font_size = 23
 text = "3"
 
-[node name="BtnOptions" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="BtnOptions" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1534743868]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -139,12 +141,12 @@ size_flags_vertical = 4
 theme_override_font_sizes/font_size = 23
 text = "Options"
 
-[node name="Control" type="Control" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer"]
+[node name="Control" type="Control" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer" unique_id=87810021]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="BtnExit" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer"]
+[node name="BtnExit" type="Button" parent="CenterContainer/MenuPanel/MarginContainer/VBoxContainer" unique_id=815031115]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -152,65 +154,65 @@ size_flags_vertical = 4
 theme_override_font_sizes/font_size = 27
 text = "SALIR"
 
-[node name="JoinPanel" type="VBoxContainer" parent="CenterContainer"]
+[node name="JoinPanel" type="VBoxContainer" parent="CenterContainer" unique_id=467424244]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/JoinPanel"]
+[node name="Label" type="Label" parent="CenterContainer/JoinPanel" unique_id=1998341298]
 layout_mode = 2
 text = "Introduce el código de sala:"
 horizontal_alignment = 1
 
-[node name="IPInput" type="LineEdit" parent="CenterContainer/JoinPanel"]
+[node name="IPInput" type="LineEdit" parent="CenterContainer/JoinPanel" unique_id=392963849]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ConfirmJoinButton" type="Button" parent="CenterContainer/JoinPanel"]
+[node name="ConfirmJoinButton" type="Button" parent="CenterContainer/JoinPanel" unique_id=819448518]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 text = "CONFIRMAR"
 
-[node name="CancelJoinButton" type="Button" parent="CenterContainer/JoinPanel"]
+[node name="CancelJoinButton" type="Button" parent="CenterContainer/JoinPanel" unique_id=1757736435]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 text = "ATRAS"
 
-[node name="LobbyPanel" type="CenterContainer" parent="CenterContainer"]
+[node name="LobbyPanel" type="CenterContainer" parent="CenterContainer" unique_id=655478047]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/LobbyPanel"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/LobbyPanel" unique_id=582176934]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CenterContainer/LobbyPanel/VBoxContainer"]
+[node name="Label" type="Label" parent="CenterContainer/LobbyPanel/VBoxContainer" unique_id=481032074]
 layout_mode = 2
 text = "Código de Sala:"
 horizontal_alignment = 1
 
-[node name="LabelCodigoValor" type="Label" parent="CenterContainer/LobbyPanel/VBoxContainer"]
+[node name="LabelCodigoValor" type="Label" parent="CenterContainer/LobbyPanel/VBoxContainer" unique_id=1071730186]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ListaJugadores" type="ItemList" parent="CenterContainer/LobbyPanel/VBoxContainer"]
+[node name="ListaJugadores" type="ItemList" parent="CenterContainer/LobbyPanel/VBoxContainer" unique_id=340801105]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(250, 200)
 layout_mode = 2
 
-[node name="StartGameButton" type="Button" parent="CenterContainer/LobbyPanel/VBoxContainer"]
+[node name="StartGameButton" type="Button" parent="CenterContainer/LobbyPanel/VBoxContainer" unique_id=858314199]
 visible = false
 layout_mode = 2
 text = "INICIAR PARTIDA"
 
-[node name="CancelHostButton" type="Button" parent="CenterContainer/LobbyPanel/VBoxContainer"]
+[node name="CancelHostButton" type="Button" parent="CenterContainer/LobbyPanel/VBoxContainer" unique_id=813969672]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 text = "ATRAS"
 
-[node name="OptionsPanel" type="Panel" parent="."]
+[node name="OptionsPanel" type="Panel" parent="." unique_id=169189356]
 visible = false
 self_modulate = Color(0, 0, 0, 1)
 custom_minimum_size = Vector2(400, 300)
@@ -228,53 +230,53 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_853f1")
 
-[node name="MarginContainer" type="MarginContainer" parent="OptionsPanel"]
+[node name="MarginContainer" type="MarginContainer" parent="OptionsPanel" unique_id=781359265]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 0
 offset_left = 20.0
 offset_right = 224.0
 offset_bottom = 58.0
 
-[node name="MenuFondos" type="VBoxContainer" parent="OptionsPanel/MarginContainer"]
+[node name="MenuFondos" type="VBoxContainer" parent="OptionsPanel/MarginContainer" unique_id=646971940]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="SELECCIONAR FONDO" type="Label" parent="OptionsPanel/MarginContainer/MenuFondos"]
+[node name="SELECCIONAR FONDO" type="Label" parent="OptionsPanel/MarginContainer/MenuFondos" unique_id=145632810]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="OptionsPanel/MarginContainer/MenuFondos"]
+[node name="HBoxContainer" type="HBoxContainer" parent="OptionsPanel/MarginContainer/MenuFondos" unique_id=1767207596]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 15
 
-[node name="Label" type="Label" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer"]
+[node name="Label" type="Label" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer" unique_id=1216964618]
 layout_mode = 2
 text = "Background"
 
-[node name="BtnAnterior" type="Button" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer"]
+[node name="BtnAnterior" type="Button" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer" unique_id=389650746]
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 text = "<"
 
-[node name="LblNombreFondo" type="Label" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer"]
+[node name="LblNombreFondo" type="Label" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer" unique_id=1805382849]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 horizontal_alignment = 1
 clip_text = true
 
-[node name="BtnSiguiente" type="Button" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer"]
+[node name="BtnSiguiente" type="Button" parent="OptionsPanel/MarginContainer/MenuFondos/HBoxContainer" unique_id=495290381]
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 text = ">"
 
-[node name="HSeparator" type="HSeparator" parent="OptionsPanel/MarginContainer/MenuFondos"]
+[node name="HSeparator" type="HSeparator" parent="OptionsPanel/MarginContainer/MenuFondos" unique_id=1081905184]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 6
 
-[node name="BtnCerrar" type="Button" parent="OptionsPanel/MarginContainer/MenuFondos"]
+[node name="BtnCerrar" type="Button" parent="OptionsPanel/MarginContainer/MenuFondos" unique_id=177134774]
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_horizontal = 8

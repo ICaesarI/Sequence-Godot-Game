@@ -76,7 +76,7 @@ func stop_listening():
 		listener.close()
 		listener = null
 
-func _process(delta):
+func _process(_delta):
 	while listener and listener.get_available_packet_count() > 0:
 		var array_bytes = listener.get_packet()
 		var msg = array_bytes.get_string_from_utf8()
@@ -188,7 +188,7 @@ func register_player(id, p_name):
 	player_list_changed.emit()
 	
 @rpc("authority", "reliable", "call_local")
-func iniciar_partida_remota(n: int):
+func iniciar_partida_remota(_n: int):
 	get_tree().change_scene_to_file("res://Scenes/Main.tscn")
 	
 	await get_tree().create_timer(0.3).timeout

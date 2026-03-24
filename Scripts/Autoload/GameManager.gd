@@ -11,6 +11,12 @@ var current_player_index: int = 0  # Índice del jugador actual
 var total_teams_in_play: int = 2   # 2 o 3 equipos
 
 
+# --- CONFIGURACIÓN GLOBAL ---
+var global_volume: float = 1.0
+var global_brightness: float = 1.0
+var brightness_layer: CanvasLayer
+var brightness_rect: ColorRect
+
 signal fondo_cambiado(nueva_ruta) # Avisa a las escenas que el fondo cambió
 var background_texture_path: String = ""
 
@@ -36,10 +42,41 @@ func change_state(new_state: GameState):
 
 # --- INICIALIZACIÓN ---
 func _ready():
+	_setup_global_settings()
+	
 	if not multiplayer.has_multiplayer_peer():
 		print("Iniciando en modo local por defecto...")
 	else:
 		print("Esperando señal del servidor para iniciar...")
+
+func _setup_global_settings():
+	brightness_layer = CanvasLayer.new()
+	brightness_layer.layer = 120 # Muy por encima de todo
+	add_child(brightness_layer)
+	
+	brightness_rect = ColorRect.new()
+	brightness_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	brightness_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	brightness_rect.color = Color(0, 0, 0, 0)
+	brightness_layer.add_child(brightness_rect)
+	
+	set_brightness(1.0)
+	set_volume(1.0)
+
+func set_brightness(val: float):
+	global_brightness = clamp(val, 0.1, 1.0)
+	var darkness = 1.0 - global_brightness
+	if brightness_rect:
+		brightness_rect.color = Color(0, 0, 0, darkness)
+
+func set_volume(val: float):
+	global_volume = clamp(val, 0.0, 1.0)
+	var bus = AudioServer.get_bus_index("Master")
+	if global_volume <= 0.05:
+		AudioServer.set_bus_mute(bus, true)
+	else:
+		AudioServer.set_bus_mute(bus, false)
+		AudioServer.set_bus_volume_db(bus, linear_to_db(global_volume))
 	
 func cambiar_fondo(ruta: String):
 	background_texture_path = ruta

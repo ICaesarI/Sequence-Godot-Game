@@ -64,7 +64,8 @@ func _ready():
 		await get_tree().create_timer(0.5).timeout
 		iniciar_flujo_partida()
 
-	# 4. Ajuste final de interfaz
+	# 4. Ajuste final de interfaz visual tipo Photo Roulette
+	_setup_photo_roulette_game_ui()
 	_on_screen_resized()
 
 func iniciar_flujo_partida():
@@ -82,6 +83,12 @@ func _on_game_state_changed(new_state):
 	if new_state == GameManager.GameState.PLAYER_TURN:
 		actualizar_ui_turnos()
 		actualizar_ayuda_visual_tablero()
+		
+		# CRÍTICO: En modo local (u online si es mi turno), refrescar la mano real!
+		# Esto evita el bug donde se veían cartas del jugador anterior y se duplicaban al robar.
+		var p_data = GameManager.get_current_player_data()
+		if not multiplayer.has_multiplayer_peer() or p_data.net_id == multiplayer.get_unique_id():
+			mostrar_mano_jugador_actual()
 
 func _actualizar_fondo_tablero(ruta: String):
 	if ruta == "": 
@@ -110,6 +117,69 @@ func _actualizar_fondo_tablero(ruta: String):
 			print("DEBUG ERROR: No se pudo cargar la imagen en: ", ruta)
 	else:
 		print("DEBUG ERROR: ¡No se encontró el nodo TextureRect! Revisa el nombre en el editor.")
+
+func _setup_photo_roulette_game_ui():
+	var f_bold = load("res://Assets/FuentesTexto/PixelOperator-Bold.ttf")
+	
+	# 1. Panel de Mono estilo Glassmorphism
+	if hand_panel:
+		var glass = StyleBoxFlat.new()
+		glass.bg_color = Color(0.05, 0.05, 0.05, 0.90)
+		glass.corner_radius_top_left = 35
+		glass.corner_radius_top_right = 35
+		glass.border_width_top = 4
+		glass.border_color = Color.TRANSPARENT 
+		hand_panel.add_theme_stylebox_override("panel", glass)
+		
+	# 2. Botón Discard píldora
+	if discard_button:
+		var pill_red = StyleBoxFlat.new()
+		pill_red.bg_color = Color("#e63946")
+		pill_red.set_corner_radius_all(50)
+		
+		var pill_red_hover = pill_red.duplicate()
+		pill_red_hover.bg_color = Color("#f05a66")
+		
+		var pill_red_pressed = pill_red.duplicate()
+		pill_red_pressed.bg_color = Color("#bc2732")
+		
+		var pill_disabled = pill_red.duplicate()
+		pill_disabled.bg_color = Color(0.3, 0.3, 0.3, 0.5)
+		
+		discard_button.add_theme_stylebox_override("normal", pill_red)
+		discard_button.add_theme_stylebox_override("hover", pill_red_hover)
+		discard_button.add_theme_stylebox_override("pressed", pill_red_pressed)
+		discard_button.add_theme_stylebox_override("disabled", pill_disabled)
+		if f_bold: discard_button.add_theme_font_override("font", f_bold)
+		discard_button.add_theme_font_size_override("font_size", 28)
+		discard_button.add_theme_color_override("font_color", Color.WHITE)
+		discard_button.custom_minimum_size = Vector2(200, 50)
+		
+	# 3. Base del Tablero oscuro semi-transparente
+	if grid and grid.get_parent() is MarginContainer:
+		var aspect = grid.get_parent().get_parent()
+		if aspect and aspect.name == "BoardAspect":
+			var board_bg = StyleBoxFlat.new()
+			board_bg.bg_color = Color(0, 0, 0, 0.45)
+			board_bg.set_corner_radius_all(15)
+			board_bg.content_margin_left = 15
+			board_bg.content_margin_right = 15
+			board_bg.content_margin_top = 15
+			board_bg.content_margin_bottom = 15
+			
+			var p = PanelContainer.new()
+			p.add_theme_stylebox_override("panel", board_bg)
+			
+			# Envolvemos el grid y no al AspectRatioContainer para que abrace 
+			# justa y únicamente a las cartas evitando que crezca de más
+			var m_container = grid.get_parent()
+			m_container.remove_child(grid)
+			p.add_child(grid)
+			m_container.add_child(p)
+			
+			grid.add_theme_constant_override("h_separation", 3)
+			grid.add_theme_constant_override("v_separation", 3)
+
 	
 # ==============================================================================
 # 3. RESPONSIVE DESIGN
@@ -165,36 +235,46 @@ func _on_screen_resized():
 
 func _aplicar_flags_expansion():
 	# Para que stretch_ratio funcione, las flags deben ser EXPAND_FILL
-	info_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	info_panel.size_flags_horizontal = Control.SIZE_SHRINK_END
+	info_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	
 	right_side_wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_side_wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
 	game_zone.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	
+	# Restringir la mano en PC para no solapar botones de los lados
+	var screen_size = get_viewport_rect().size
+	if screen_size.x > screen_size.y: # Es Landscape (PC)
+		hand_wrapper.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		hand_wrapper.custom_minimum_size.x = min(screen_size.x * 0.75, 1200)
+	else:
+		hand_wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hand_wrapper.custom_minimum_size.x = 0
+		
 	hand_wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 func _posicionar_hud_flotante(hud_node: Control, vertical: bool):
 	var screen_size = get_viewport_rect().size
 	
 	# 1. Definimos un ancho relativo (ej: 40% de la pantalla en PC, 80% en móvil)
-	var factor_ancho = 0.4 if not vertical else 0.8
+	var factor_ancho = 0.35 if not vertical else 0.8
 	var ancho_hud = screen_size.x * factor_ancho
 	
 	hud_node.set_as_top_level(true)
 	hud_node.anchor_left = 1.0
 	hud_node.anchor_right = 1.0
 	hud_node.anchor_top = 0.0
+	hud_node.anchor_bottom = 0.0
 	
 	# 2. Aplicamos el tamaño calculado
-	hud_node.offset_left = -ancho_hud - 20 # 20px de margen
-	hud_node.offset_right = -20
-	hud_node.offset_top = 15
+	hud_node.offset_left = -ancho_hud - 30 # 30px de margen derecho
+	hud_node.offset_right = -30
+	hud_node.offset_top = 30 # Margen superior
 	
-	# 3. Escalado Dinámico: Si la pantalla es muy pequeña, reducimos la escala del HUD
-	# Esto evita que las etiquetas se vean gigantes en teléfonos
-	var base_width = 1280.0 # Nuestra resolución base de diseño
-	var scale_factor = clamp(screen_size.x / base_width, 0.7, 1.0)
+	# 3. Escalado Dinámico
+	var base_width = 1280.0
+	var scale_factor = clamp(screen_size.x / base_width, 0.7, 1.2)
 	hud_node.scale = Vector2(scale_factor, scale_factor)
 	
 	# Importante: Ajustar el pivote a la derecha para que escale hacia adentro
@@ -357,10 +437,20 @@ func _animar_cambio_color_panel(target_color: Color):
 	if color_tween: color_tween.kill()
 	color_tween = create_tween().set_parallel(true)
 	
-	color_tween.tween_property(style_box, "border_color", target_color, 0.4)
-	var dark_bg = target_color.darkened(0.8) 
-	dark_bg.a = 0.8 
-	color_tween.tween_property(style_box, "bg_color", dark_bg, 0.4)
+	# Usamos un color base fijo translúcido para que no se arruine el efecto Glass
+	var base_glass = Color(0.05, 0.05, 0.05, 0.90)
+	
+	if target_color == Color(0.2, 0.2, 0.2):
+		# No es mi turno
+		color_tween.tween_property(style_box, "border_color", Color.TRANSPARENT, 0.4)
+		color_tween.tween_property(style_box, "bg_color", base_glass, 0.4)
+	else:
+		# Es mi turno: ilumina sutilmente el borde superior y tienta MUY poco el cristal
+		color_tween.tween_property(style_box, "border_color", target_color, 0.4)
+		var sutil = target_color
+		sutil.a = 0.05
+		var mix = base_glass.blend(sutil)
+		color_tween.tween_property(style_box, "bg_color", mix, 0.4)
 
 func repartir_manos_iniciales():
 	# 1. Si ya hay cartas, no repartimos (evita duplicados al recargar)
@@ -498,10 +588,25 @@ func ejecutar_jugada_sincronizada(slot_index: int, card_id_usada: String):
 	var hubo_secuencia = verificar_secuencia(slot)
 	
 	# 4. Cada uno limpia su propia mano y roba (si es su turno)
-	if multiplayer.get_unique_id() == multiplayer.get_remote_sender_id() or (multiplayer.is_server() and multiplayer.get_remote_sender_id() == 0):
+	var es_mi_jugada = false
+	if not multiplayer.has_multiplayer_peer():
+		es_mi_jugada = true # Modo local, el servidor es la PC actual
+	else:
+		es_mi_jugada = (multiplayer.get_unique_id() == multiplayer.get_remote_sender_id() or (multiplayer.is_server() and multiplayer.get_remote_sender_id() == 0))
+		
+	if es_mi_jugada:
+		var size_antes = GameManager.get_mano_actual().size()
 		GameManager.eliminar_de_mano(GameManager.current_player_index, card_id_usada)
+		var size_despues = GameManager.get_mano_actual().size()
+		
 		carta_seleccionada_actual = null
-		robar_carta()
+		
+		# Robamos SOLO si la carta física pertenecía a nuestra mano lógica
+		if size_despues < size_antes:
+			robar_carta()
+		else:
+			print("Bug Evitado: Intento de jugar carta ajena interceptado.")
+			
 		mostrar_mano_jugador_actual()
 
 	# 5. Gestión de Victoria

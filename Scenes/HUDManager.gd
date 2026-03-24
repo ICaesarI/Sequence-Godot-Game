@@ -27,29 +27,56 @@ func actualizar_turno_visual(team_activo_id: int, _nombre_jugador_activo: String
 		# Extraemos el nombre correspondiente al equipo que este panel representa:
 		var nombres_equipo = []
 		for p in GameManager.players:
-			if p.has("team") and p["team"] == id:
-				nombres_equipo.append(p["name"])
-		var texto_nombres = " / ".join(nombres_equipo) if nombres_equipo.size() > 0 else "ESPERANDO..."
+			if typeof(p) == TYPE_DICTIONARY and p.has("team") and p["team"] == id:
+				var n = p.get("name", "").strip_edges()
+				if n != "": nombres_equipo.append(n)
+		
+		var texto_nombres = ""
+		if nombres_equipo.size() > 0:
+			texto_nombres = " - ".join(nombres_equipo)
+			
+		# Limpiar si se coló un guión vacío por arreglos incompletos
+		texto_nombres = texto_nombres.strip_edges()
+		if texto_nombres.ends_with("-"):
+			texto_nombres = texto_nombres.left(-1).strip_edges()
+			
+		if texto_nombres == "":
+			texto_nombres = "EQUIPO " + str(id + 1)
 		
 		var color_base = GameManager.get_team_color(id)
 		var style = StyleBoxFlat.new()
-		style.set_corner_radius_all(5)
+		style.set_corner_radius_all(50)
+		style.content_margin_top = 10
+		style.content_margin_bottom = 20
 		
 		var lbl_name = _get_label(panel, "Lbl_Name")
 		if lbl_name:
 			lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			lbl_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			lbl_name.text = TEAM_DEFAULT_NAMES[id] + "\n" + texto_nombres.to_upper()
+			
+			var nombre_limpio = texto_nombres.to_upper()
+			if nombre_limpio.is_empty(): nombre_limpio = "..."
+			lbl_name.text = nombre_limpio
+			
 			lbl_name.clip_text = true
+			lbl_name.autowrap_mode = TextServer.AUTOWRAP_OFF
+			
+			var f_bold = load("res://Assets/FuentesTexto/PixelOperator-Bold.ttf")
+			if f_bold: lbl_name.add_theme_font_override("font", f_bold)
+			lbl_name.add_theme_font_size_override("font_size", 28)
 		
 		if id == team_activo_id:
 			style.bg_color = color_base
-			style.border_width_bottom = 4
+			style.set_border_width_all(5)
 			style.border_color = Color.WHITE
+			style.shadow_color = color_base
+			style.shadow_size = 10
 			if lbl_name: lbl_name.add_theme_color_override("font_color", Color.WHITE)
 		else:
-			style.bg_color = Color(0.1, 0.1, 0.1, 0.7)
-			if lbl_name: lbl_name.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+			style.bg_color = Color(0.1, 0.1, 0.1, 0.6)
+			style.set_border_width_all(0)
+			style.shadow_size = 0
+			if lbl_name: lbl_name.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 			
 		panel.add_theme_stylebox_override("panel", style)
 	
@@ -61,9 +88,11 @@ func configurar_layout_responsive(_ignorar: bool):
 		h_box.vertical = true 
 	
 	h_box.alignment = BoxContainer.ALIGNMENT_BEGIN
-	h_box.add_theme_constant_override("separation", 10)
+	h_box.add_theme_constant_override("separation", 15)
 	
-	var ancho_fijo = 140
+	# Usamos píldoras más alargadas y bajas
+	var ancho_fijo = 200
+	var alto_fijo = 60
 	self.custom_minimum_size.x = ancho_fijo
 	
 	for id in panels.keys():
@@ -73,14 +102,14 @@ func configurar_layout_responsive(_ignorar: bool):
 			wrapper.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			wrapper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 			
-			# Aumentamos un poco el alto para que quepa el punto abajo
-			wrapper.custom_minimum_size = Vector2(ancho_fijo, 85)
-			p.custom_minimum_size = Vector2(ancho_fijo - 10, 80)
+			# Contenedor padre deja más espacio vertical para los puntos abajo
+			wrapper.custom_minimum_size = Vector2(ancho_fijo, alto_fijo + 15)
+			p.custom_minimum_size = Vector2(ancho_fijo, alto_fijo)
 			
 			var lbl = _get_label(p, "Lbl_Name")
 			if lbl:
 				lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-				lbl.custom_minimum_size = Vector2(ancho_fijo - 20, 50)
+				lbl.custom_minimum_size = Vector2(ancho_fijo - 20, alto_fijo - 20)
 
 	_posicionar_en_esquina()
 

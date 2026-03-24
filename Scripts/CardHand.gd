@@ -74,10 +74,10 @@ func _on_mouse_entered():
 	z_index = 10
 
 	hover_tween = create_tween()
-	hover_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	hover_tween.tween_property(self, "position", base_pos + Vector2(0, -15), 0.12)
-	hover_tween.parallel().tween_property(self, "rotation", deg_to_rad(randf_range(-2, 2)), 0.12)
-	hover_tween.parallel().tween_property(self, "scale", Vector2(1.05, 1.05), 0.12)
+	hover_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	hover_tween.tween_property(self, "position", base_pos + Vector2(0, -25), 0.15)
+	hover_tween.parallel().tween_property(self, "rotation", deg_to_rad(randf_range(-4, 4)), 0.15)
+	hover_tween.parallel().tween_property(self, "scale", Vector2(1.15, 1.15), 0.15)
 
 func _on_mouse_exited():
 	if selected: return
@@ -106,7 +106,7 @@ func set_selected(state: bool):
 		z_index = 20
 		select_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 		
-		select_tween.tween_property(self, "position", base_pos + Vector2(0, -30), 0.2)
+		select_tween.tween_property(self, "position", base_pos + Vector2(0, -20), 0.2)
 		select_tween.parallel().tween_property(self, "scale", Vector2(1.15, 1.15), 0.2)
 		select_tween.parallel().tween_property(self, "rotation", 0.0, 0.1)
 		
@@ -136,6 +136,6 @@ func _start_floating_loop():
 	select_tween = create_tween().set_loops()
 	select_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	
-	select_tween.tween_property(self, "position:y", base_pos.y - 35, 0.8)
 	select_tween.tween_property(self, "position:y", base_pos.y - 25, 0.8)
+	select_tween.tween_property(self, "position:y", base_pos.y - 15, 0.8)
 	
