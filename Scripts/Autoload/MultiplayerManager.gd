@@ -1,20 +1,81 @@
 extends Node
 
 signal player_list_changed
+signal room_discovered(codigo, ip)
 
 const PORT = 7000
+const UDP_PORT = 7001
+
 var peer = ENetMultiplayerPeer.new()
 var local_player_name: String = ""
 var players = {} 
 var codigo_sala_actual: String = ""
 var codigo_intentado: String = ""
 
+# --- VARIABLES LAN DISCOVERY ---
+var broadcaster: PacketPeerUDP
+var listener: PacketPeerUDP
+var broadcast_timer: Timer
+var discovered_rooms = {} 
+# -------------------------------
 
 func _ready():
+	set_process(false)
 	multiplayer.peer_connected.connect(_on_player_connected)
 	multiplayer.peer_disconnected.connect(_on_player_disconnected)
 	multiplayer.connected_to_server.connect(_on_connection_success)
 	multiplayer.connection_failed.connect(_on_connection_failed)	
+	
+	broadcast_timer = Timer.new()
+	broadcast_timer.wait_time = 1.0
+	broadcast_timer.timeout.connect(_on_broadcast_timer_timeout)
+	add_child(broadcast_timer)
+
+# --- SISTEMA DE GESTIÓN LAN DISCOVERY ---
+func start_broadcasting():
+	broadcaster = PacketPeerUDP.new()
+	broadcaster.set_broadcast_enabled(true)
+	broadcaster.set_dest_address("255.255.255.255", UDP_PORT)
+	broadcast_timer.start()
+
+func stop_broadcasting():
+	broadcast_timer.stop()
+	if broadcaster:
+		broadcaster.close()
+		broadcaster = null
+
+func _on_broadcast_timer_timeout():
+	if broadcaster and codigo_sala_actual != "":
+		var message = "SEQ_ROOM:" + codigo_sala_actual
+		broadcaster.put_packet(message.to_utf8_buffer())
+
+func start_listening():
+	discovered_rooms.clear()
+	listener = PacketPeerUDP.new()
+	listener.bind(UDP_PORT)
+	set_process(true)
+
+func stop_listening():
+	set_process(false)
+	if listener:
+		listener.close()
+		listener = null
+
+func _process(delta):
+	if listener and listener.get_available_packet_count() > 0:
+		var array_bytes = listener.get_packet()
+		var msg = array_bytes.get_string_from_utf8()
+		
+		# Validar si el grito viene de una partida de Sequence
+		if msg.begins_with("SEQ_ROOM:"):
+			var code = msg.replace("SEQ_ROOM:", "")
+			var sender_ip = listener.get_packet_ip()
+			
+			if not discovered_rooms.has(code) or discovered_rooms[code] != sender_ip:
+				discovered_rooms[code] = sender_ip
+				room_discovered.emit(code, sender_ip)
+				print("LAN Discovery: ¡Sala oculta encriptada encontrada! Código: ", code, " - IP: ", sender_ip)
+# ----------------------------------------
 
 func stop_multiplayer():
 	multiplayer.multiplayer_peer = null
@@ -26,6 +87,10 @@ func stop_multiplayer():
 	players.clear()
 	codigo_sala_actual = ""
 	codigo_intentado = ""
+	
+	stop_broadcasting()
+	stop_listening()
+	
 	player_list_changed.emit() 
 	print("Red reseteada.")
 
@@ -40,6 +105,7 @@ func host_game(player_name: String, codigo: String):
 	
 	multiplayer.multiplayer_peer = peer
 	register_player(1, local_player_name)
+	start_broadcasting()
 	print("Servidor creado. Código: ", codigo_sala_actual)
 	
 	

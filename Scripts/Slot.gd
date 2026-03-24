@@ -27,6 +27,7 @@ func _ready():
 	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	face.set_anchors_preset(Control.PRESET_FULL_RECT)
+	chip_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	face.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -139,9 +140,11 @@ func _update_chip_layout():
 	var chip = chip_layer.get_node_or_null("Chip")
 	if chip:
 		var d: float = minf(size.x, size.y) * CHIP_SCALE_RATIO
-		chip.custom_minimum_size = Vector2(d, d)
-		chip.position = (size - chip.size) / 2.0
-		chip.pivot_offset = chip.size / 2
+		var chip_size := Vector2(d, d)
+		chip.custom_minimum_size = chip_size
+		chip.size = chip_size
+		chip.position = (size - chip_size) / 2.0
+		chip.pivot_offset = chip_size / 2.0
 
 func set_playable(state: bool) -> void:
 	is_playable = state

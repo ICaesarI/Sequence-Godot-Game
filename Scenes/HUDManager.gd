@@ -18,10 +18,18 @@ func _ready():
 	setup_hud_inicial()
 	configurar_layout_responsive(true)
 
-func actualizar_turno_visual(team_activo_id: int, nombre_jugador: String):
+func actualizar_turno_visual(team_activo_id: int, _nombre_jugador_activo: String = ""):
 	for id in panels.keys():
 		var panel = panels[id]
 		if not panel or not panel.get_parent().visible: continue
+		
+		# En lugar de usar el nombre del jugador activo para todo el mundo,
+		# Extraemos el nombre correspondiente al equipo que este panel representa:
+		var nombres_equipo = []
+		for p in GameManager.players:
+			if p.has("team") and p["team"] == id:
+				nombres_equipo.append(p["name"])
+		var texto_nombres = " / ".join(nombres_equipo) if nombres_equipo.size() > 0 else "ESPERANDO..."
 		
 		var color_base = GameManager.get_team_color(id)
 		var style = StyleBoxFlat.new()
@@ -31,7 +39,7 @@ func actualizar_turno_visual(team_activo_id: int, nombre_jugador: String):
 		if lbl_name:
 			lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			lbl_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			lbl_name.text = TEAM_DEFAULT_NAMES[id] + "\n" + nombre_jugador.to_upper()
+			lbl_name.text = TEAM_DEFAULT_NAMES[id] + "\n" + texto_nombres.to_upper()
 			lbl_name.clip_text = true
 		
 		if id == team_activo_id:

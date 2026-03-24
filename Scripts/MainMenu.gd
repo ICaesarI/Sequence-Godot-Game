@@ -53,6 +53,7 @@ func _ready():
 	if is_instance_valid(MultiplayerManager):
 		if not MultiplayerManager.player_list_changed.is_connected(_actualizar_lista_visual_jugadores):
 			MultiplayerManager.player_list_changed.connect(_actualizar_lista_visual_jugadores)
+		MultiplayerManager.start_listening()
 	else:
 		push_error("MultiplayerManager no encontrado. Revisa tus Autoloads.")
 	
@@ -91,14 +92,26 @@ func _on_confirm_join_button_pressed():
 		return
 	
 	if is_instance_valid(MultiplayerManager):
-		MultiplayerManager.join_game(nombre, "127.0.0.1", codigo)
+		var ip_encontrada = MultiplayerManager.discovered_rooms.get(codigo, "")
+		
+		if ip_encontrada == "":
+			ip_input.text = ""
+			ip_input.placeholder_text = "¡CÓDIGO NO ENCONTRADO EN RED!"
+			var original_color = ip_input.modulate
+			ip_input.modulate = Color.RED
+			await get_tree().create_timer(1.5).timeout
+			ip_input.modulate = original_color
+			ip_input.placeholder_text = "Código de Sala"
+			return
+			
+		MultiplayerManager.stop_listening()
+		MultiplayerManager.join_game(nombre, ip_encontrada, codigo)
 		
 		join_panel.hide()
 		lobby_panel.show()
 		lbl_codigo_valor.text = "Validando sala..."
 		
 		if lista_jugadores: lista_jugadores.clear()
-		
 
 func _on_cancel_join_button_pressed():
 	join_panel.hide()

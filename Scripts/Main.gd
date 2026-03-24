@@ -44,6 +44,9 @@ func _ready():
 		if not GameManager.fondo_cambiado.is_connected(_actualizar_fondo_tablero):
 			GameManager.fondo_cambiado.connect(_actualizar_fondo_tablero)
 	
+	if not GameManager.state_changed.is_connected(_on_game_state_changed):
+		GameManager.state_changed.connect(_on_game_state_changed)
+		
 	if GameManager.background_texture_path != "":
 		_actualizar_fondo_tablero(GameManager.background_texture_path)
 
@@ -74,6 +77,11 @@ func iniciar_flujo_partida():
 		repartir_manos_iniciales()
 	
 	actualizar_ui_turnos()
+
+func _on_game_state_changed(new_state):
+	if new_state == GameManager.GameState.PLAYER_TURN:
+		actualizar_ui_turnos()
+		actualizar_ayuda_visual_tablero()
 
 func _actualizar_fondo_tablero(ruta: String):
 	if ruta == "": 
@@ -324,7 +332,14 @@ func actualizar_ui_turnos():
 	var base_color = GameManager.get_team_color(team_id)
 	
 	# 1. Panel Inferior (Mano)
-	_animar_cambio_color_panel(base_color)
+	var es_mi_turno = true
+	if multiplayer.has_multiplayer_peer():
+		es_mi_turno = (p_data.net_id == multiplayer.get_unique_id())
+		
+	if es_mi_turno:
+		_animar_cambio_color_panel(base_color)
+	else:
+		_animar_cambio_color_panel(Color(0.2, 0.2, 0.2))
 	
 	# 2. Panel Superior (HUD)
 	if hud_script.has_method("actualizar_turno_visual"):
@@ -499,9 +514,7 @@ func ejecutar_jugada_sincronizada(slot_index: int, card_id_usada: String):
 	if multiplayer.is_server():
 		GameManager.cambiar_turno()
 	
-	# 7. Actualizar UI local
-	actualizar_ui_turnos()
-	actualizar_ayuda_visual_tablero()
+	# 7. Actualizar UI local se maneja ahora por la señal state_changed
 
 func robar_carta():
 	var id = GameManager.draw_card()
@@ -526,7 +539,6 @@ func _on_discard_pressed():
 	robar_carta() 
 	
 	GameManager.cambiar_turno()
-	actualizar_ui_turnos()
 	mostrar_mano_jugador_actual()
 
 func actualizar_estado_descartar():
