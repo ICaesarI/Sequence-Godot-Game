@@ -62,7 +62,7 @@ func stop_listening():
 		listener = null
 
 func _process(delta):
-	if listener and listener.get_available_packet_count() > 0:
+	while listener and listener.get_available_packet_count() > 0:
 		var array_bytes = listener.get_packet()
 		var msg = array_bytes.get_string_from_utf8()
 		

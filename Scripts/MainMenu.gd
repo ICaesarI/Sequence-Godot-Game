@@ -120,6 +120,7 @@ func _on_cancel_join_button_pressed():
 func _on_back_from_lobby_pressed():
 	if is_instance_valid(MultiplayerManager):
 		MultiplayerManager.stop_multiplayer()
+		MultiplayerManager.start_listening() # ¡Volver a encender el radar!
 	
 	lobby_panel.hide()
 	menu_panel.show()
