@@ -47,7 +47,22 @@ func stop_broadcasting():
 func _on_broadcast_timer_timeout():
 	if broadcaster and codigo_sala_actual != "":
 		var message = "SEQ_ROOM:" + codigo_sala_actual
-		broadcaster.put_packet(message.to_utf8_buffer())
+		var buffer = message.to_utf8_buffer()
+		
+		# 1. Intento global (Suele irse por VirtualBox por tener distinta métrica en Windows)
+		broadcaster.set_dest_address("255.255.255.255", UDP_PORT)
+		broadcaster.put_packet(buffer)
+		
+		# 2. Intento forzado a cada subred (Para garantizar que cruce el Wi-Fi real)
+		var ips_locales = IP.get_local_addresses()
+		for ip in ips_locales:
+			if ip.begins_with("192.168.") or ip.begins_with("10.") or ip.begins_with("172."):
+				var partes = ip.split(".")
+				if partes.size() == 4:
+					partes[3] = "255" # Transformamos 192.168.100.2 a 192.168.100.255
+					var subnet_broadcast = ".".join(partes)
+					broadcaster.set_dest_address(subnet_broadcast, UDP_PORT)
+					broadcaster.put_packet(buffer)
 
 func start_listening():
 	discovered_rooms.clear()
