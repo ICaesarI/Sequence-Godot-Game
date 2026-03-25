@@ -8,14 +8,35 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="Sequence"
-run/main_scene="uid://b0o82dl81mtsx"
-config/features=PackedStringArray("4.5", "Forward Plus")
+run/main_scene="uid://bvwiu6nssy7b5"
+config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
-BoardData="*res://Scripts/BoardData.gd"
-GameManager="*res://Scripts/GameManager.gd"
+BoardData="*res://Scripts/Autoload/BoardData.gd"
+GameManager="*res://Scripts/Autoload/GameManager.gd"
+CardAssets="*res://Scripts/Autoload/CardAssets.gd"
+MultiplayerManager="*res://Scripts/Autoload/MultiplayerManager.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/initial_position_type=0
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=6
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

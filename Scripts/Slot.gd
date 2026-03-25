@@ -1,55 +1,226 @@
-extends ColorRect
+extends Control
 
 signal slot_clicked(slot_node)
 
+@onready var bg: ColorRect = $BG
+@onready var face: TextureRect = $CardFace
+@onready var debug_label: Label = $Label
+@onready var chip_layer: Control = $ChipLayer
+
 var card_id: String = ""
 var occupied_by: String = ""
-var highlight_tween: Tween # Variable para controlar la animación
+var is_playable: bool = false
+var is_free := false
+
+var highlight_tween: Tween
+var hover_tween: Tween
+var seq_tween: Tween
+
+var base_color: Color
+const CHIP_SCALE_RATIO = 0.85 
 
 func _ready():
-	pivot_offset = custom_minimum_size / 2
+	pivot_offset = size / 2
+	
 	mouse_filter = Control.MOUSE_FILTER_PASS
+	
+	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	face.set_anchors_preset(Control.PRESET_FULL_RECT)
+	chip_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	face.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	debug_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	base_color = bg.color
+	bg.color.a = 0.75
+	
 	gui_input.connect(_on_gui_input)
+	if not mouse_entered.is_connected(_on_mouse_entered):
+		mouse_entered.connect(_on_mouse_entered)
+	if not mouse_exited.is_connected(_on_mouse_exited):
+		mouse_exited.connect(_on_mouse_exited)
+
+	resized.connect(func(): pivot_offset = size / 2)
 
 func _on_gui_input(event):
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			emit_signal("slot_clicked", self)
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if GameManager.current_state == GameManager.GameState.PLAYER_TURN:
+			var datos_turno = GameManager.get_current_player_data()
+			
+			if not multiplayer.has_multiplayer_peer():
+				emit_signal("slot_clicked", self)
+			else:
+				if datos_turno.net_id == multiplayer.get_unique_id():
+					emit_signal("slot_clicked", self)
+				else:
+					print("No es tu turno. Es el turno de: ", datos_turno.name)
+		
+
+func setup(id: String):
+	card_id = id
+	var tex := CardAssets.get_face(card_id)
+	if tex:
+		face.texture = tex
+		debug_label.text = "" 
+	else:
+		face.texture = null
+		debug_label.text = id 
+
+func set_base_color(c: Color, free_slot := false) -> void:
+	base_color = c
+	is_free = free_slot
+	bg.color = c
 
 func set_highlight(active: bool):
-	# Si ya hay un tween corriendo, lo matamos siempre para resetear
 	if highlight_tween:
 		highlight_tween.kill()
 	
 	if active:
+		z_index = 5 
+		face.modulate = Color.WHITE
+		
 		highlight_tween = create_tween().set_loops()
-		# Animación de pulso
-		highlight_tween.tween_property(self, "self_modulate", Color(1.5, 1.5, 1.5), 0.6)
-		highlight_tween.parallel().tween_property(self, "scale", Vector2(1.05, 1.05), 0.6)
-		highlight_tween.tween_property(self, "self_modulate", Color.WHITE, 0.6)
-		highlight_tween.parallel().tween_property(self, "scale", Vector2(1.0, 1.0), 0.6)
+		highlight_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		
+		highlight_tween.tween_property(face, "modulate", Color(0.6, 0.6, 0.6), 0.7)
+		highlight_tween.tween_property(face, "modulate", Color.WHITE, 0.6)
 	else:
-		# Reset total al estado original
-		self_modulate = Color.WHITE
-		scale = Vector2(1.0, 1.0)
-		z_index = 1
+		z_index = 0
+		face.modulate = Color.WHITE
 
-# --- FUNCION PARA COLOCAR FICHA  ---
-func colocar_ficha(color_ficha, player_id):
+func colocar_ficha(_color_ficha: Color, player_id: String) -> void:
 	occupied_by = player_id
 	
-	# Cambiamos el color del fondo del Slot a un gris oscuro
-	color = Color(0.15, 0.15, 0.15) 
+	bg.color = Color(0.0, 0.0, 0.0, 0.9)
 	
-	var chip = Panel.new()
-	chip.custom_minimum_size = Vector2(60, 60)
-	chip.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	var old_chip := chip_layer.get_node_or_null("Chip")
+	if old_chip: old_chip.queue_free()
+
+	var chip := TextureRect.new()
+	chip.name = "Chip"
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	chip.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	
-	var style = StyleBoxFlat.new()
-	style.bg_color = color_ficha
-	style.set_corner_radius_all(30)
-	style.set_border_width_all(3) 
-	style.border_color = Color.WHITE
+	var chip_tex = CardAssets.get_chip(player_id)
+	if chip_tex:
+		chip.texture = chip_tex
+		chip.modulate = Color(1.1, 1.1, 1.1, 1.0) 
+	else:
+		chip.modulate = _color_ficha 
+
+	chip_layer.add_child(chip)
 	
-	chip.add_theme_stylebox_override("panel", style)
-	add_child(chip)
+	_update_chip_layout()
+
+	chip.scale = Vector2.ZERO
+	
+	var t := create_tween()
+	t.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	t.tween_property(chip, "scale", Vector2.ONE, 0.5)
+
+func quitar_ficha() -> void:
+	occupied_by = ""
+	var chip := chip_layer.get_node_or_null("Chip")
+	if chip:
+		var t = create_tween()
+		t.tween_property(chip, "scale", Vector2.ZERO, 0.2)
+		t.finished.connect(chip.queue_free)
+	
+	restore_base()
+
+func _notification(what):
+	if what == NOTIFICATION_RESIZED:
+		pivot_offset = size / 2
+		_update_chip_layout()
+
+func _update_chip_layout():
+	var chip = chip_layer.get_node_or_null("Chip")
+	if chip:
+		var d: float = minf(size.x, size.y) * CHIP_SCALE_RATIO
+		var chip_size := Vector2(d, d)
+		chip.custom_minimum_size = chip_size
+		chip.size = chip_size
+		chip.position = (size - chip_size) / 2.0
+		chip.pivot_offset = chip_size / 2.0
+
+func set_playable(state: bool) -> void:
+	is_playable = state
+	
+func set_locked_visual():
+	if chip_layer.get_child_count() > 0:
+		var chip = chip_layer.get_child(0)
+		chip.modulate = Color(0.7, 0.7, 0.7, 1.0) 
+
+func _on_mouse_entered():
+	_kill_hover_tween()
+
+	if not is_playable:
+		z_index = 2
+		hover_tween = create_tween()
+		hover_tween.tween_property(self, "scale", Vector2(1.02, 1.02), 0.1)
+	else:
+		z_index = 10
+		hover_tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		hover_tween.tween_property(self, "scale", Vector2(1.15, 1.15), 0.15)
+		hover_tween.parallel().tween_property(self, "self_modulate", Color(1.1, 1.1, 1.1), 0.1)
+
+func _on_mouse_exited():
+	_kill_hover_tween()
+
+	z_index = 5 if highlight_tween and highlight_tween.is_running() else 0
+	
+	hover_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	hover_tween.tween_property(self, "scale", Vector2.ONE, 0.12)
+	hover_tween.parallel().tween_property(self, "self_modulate", Color.WHITE, 0.1)
+
+func _kill_hover_tween():
+	if hover_tween:
+		hover_tween.kill()
+		hover_tween = null
+
+func play_sequence_anim(delay: float = 0.0) -> void:
+	var team_to_anim = GameManager.get_current_team_id()
+	
+	if delay > 0:
+		await get_tree().create_timer(delay).timeout
+		
+	if seq_tween: seq_tween.kill()
+	
+	z_index = 20 
+	
+	var bg_locked = Color(0.2, 0.15, 0.05, 0.95) 
+	
+	
+	var glow_color = Color.WHITE
+	
+	match team_to_anim:
+		0:
+			glow_color = Color(0.8, 1.2, 2.0) 
+		1: 
+			glow_color = Color(2.0, 0.85, 0.85)
+		2: 
+			glow_color = Color(0.83, 1.763, 0.83, 0.925)
+		_: 
+			glow_color = Color(1.2, 1.2, 1.2)
+	
+	
+	seq_tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	
+	seq_tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.3)
+	seq_tween.parallel().tween_property(self,  "modulate", glow_color, 0.2)
+	
+	seq_tween.chain().tween_property(self, "scale", Vector2.ONE, 0.4)
+	seq_tween.parallel().tween_property(self, "self_modulate", Color.WHITE, 0.4)
+	
+	bg.color = bg_locked
+	
+	seq_tween.finished.connect(func(): z_index = 0)
+
+func restore_base() -> void:
+	bg.color = base_color
+	self_modulate = Color.WHITE
+	face.modulate = Color.WHITE
+	scale = Vector2.ONE

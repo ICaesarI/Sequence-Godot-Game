@@ -1,29 +1,53 @@
 extends Button
 
 var card_id: String = ""
+var selected:= false
+
+@onready var art: TextureRect = $Art
+
+var base_pos: Vector2
+var hover_tween: Tween
+var select_tween: Tween
+
+func _ready():
+	base_pos = position
+
+	if not mouse_entered.is_connected(_on_mouse_entered):
+		mouse_entered.connect(_on_mouse_entered)
+	if not mouse_exited.is_connected(_on_mouse_exited):
+		mouse_exited.connect(_on_mouse_exited)
 
 func setup(id: String):
 	card_id = id
-	pivot_offset = Vector2(45, 65) 
+	pivot_offset = size / 2
+	var tex := CardAssets.get_face(card_id)
 	
-	# --- ESTILO BICYCLE BLANCO ---
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color.WHITE
-	style.set_corner_radius_all(5)
-	
-	add_theme_stylebox_override("normal", style)
-	add_theme_stylebox_override("hover", style)
-	add_theme_stylebox_override("pressed", style)
-	add_theme_stylebox_override("focus", style)
-	
-	_configurar_identidad(id)
+	if tex:
+		art.texture = tex
+	else:
+		text = id
 
-func _configurar_identidad(id: String):
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color.WHITE
+	normal.set_corner_radius_all(5)
+	normal.shadow_size = 2
+	normal.shadow_offset = Vector2(1, 1)
+
+	var hover = normal.duplicate()
+	hover.bg_color = Color(0.97, 0.97, 0.97)
+
+	var pressed_style = normal.duplicate()
+	pressed_style.bg_color = Color(0.93, 0.93, 0.93)
+
+	add_theme_stylebox_override("normal", normal)
+	add_theme_stylebox_override("hover", hover)
+	add_theme_stylebox_override("pressed", pressed_style)
+	add_theme_stylebox_override("focus", normal)
+	
 	if "_" in id:
 		var parts = id.split("_")
 		var suit = parts[0]
 		var value = parts[1]
-		
 		var es_rojo = (suit == "H" or suit == "D")
 		var color_texto = Color.DARK_RED if es_rojo else Color.BLACK
 		
@@ -37,36 +61,81 @@ func _configurar_identidad(id: String):
 		actualizar_ui(id, Color.DARK_GREEN)
 
 func actualizar_ui(txt: String, color_txt: Color):
-	text = txt
-	add_theme_color_override("font_color", color_txt)
-	add_theme_color_override("font_hover_color", color_txt)
-	add_theme_color_override("font_focus_color", color_txt)
+	if art.texture == null:
+		text = txt
+		add_theme_color_override("font_color", color_txt)
+		add_theme_color_override("font_hover_color", color_txt)
+		add_theme_color_override("font_focus_color", color_txt)
 
-# --- ANIMACIONES DE HOVER ---
 func _on_mouse_entered():
-	var tween = create_tween()
-	tween.tween_property(self, "scale", Vector2(1.1, 1.1), 0.1)
-	z_index = 5
+	if selected: return
+
+	_kill_tweens()
+	z_index = 10
+
+	hover_tween = create_tween()
+	hover_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	hover_tween.tween_property(self, "position", base_pos + Vector2(0, -25), 0.15)
+	hover_tween.parallel().tween_property(self, "rotation", deg_to_rad(randf_range(-4, 4)), 0.15)
+	hover_tween.parallel().tween_property(self, "scale", Vector2(1.15, 1.15), 0.15)
 
 func _on_mouse_exited():
-	if self.modulate != Color(0.8, 0.9, 1.0): 
-		var tween = create_tween()
-		tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.1)
-		z_index = 1
+	if selected: return
+
+	_kill_tweens()
+	z_index = 1
+
+	hover_tween = create_tween()
+	hover_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	hover_tween.tween_property(self, "position", base_pos, 0.10)
+	hover_tween.parallel().tween_property(self, "rotation", 0.0, 0.10)
+	hover_tween.parallel().tween_property(self, "scale", Vector2.ONE, 0.10)
+	hover_tween.parallel().tween_property(self, "modulate", Color.WHITE, 0.10)
+
+func _kill_tweens():
+	if hover_tween: hover_tween.kill()
+	if select_tween: select_tween.kill()
 
 func set_selected(state: bool):
-	var style = get_theme_stylebox("normal").duplicate()
+	selected = state
+	_kill_tweens()
 	
+	select_tween = create_tween()
+
 	if state:
-		style.bg_color = Color(0.85, 0.9, 1.0) # Azul selección
-		style.set_border_width_all(4) 
-		style.border_color = Color.GOLD
-		scale = Vector2(1.1, 1.1)
-		z_index = 10
+		z_index = 20
+		select_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		
+		select_tween.tween_property(self, "position", base_pos + Vector2(0, -20), 0.2)
+		select_tween.parallel().tween_property(self, "scale", Vector2(1.15, 1.15), 0.2)
+		select_tween.parallel().tween_property(self, "rotation", 0.0, 0.1)
+		
+		var current_team = GameManager.get_current_team_id()
+		var base_color = GameManager.get_team_color(current_team)
+		
+		var glow_color = base_color
+		
+		select_tween.parallel().tween_property(self, "modulate", glow_color, 0.2)
+		
+		select_tween.tween_callback(_start_floating_loop)
+		
 	else:
-		style.bg_color = Color.WHITE
-		style.set_border_width_all(0)
-		scale = Vector2(1.0, 1.0)
 		z_index = 1
+		select_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		
+		select_tween.tween_property(self, "position", base_pos, 0.15)
+		select_tween.parallel().tween_property(self, "scale", Vector2.ONE, 0.15)
+		select_tween.parallel().tween_property(self, "rotation", 0.0, 0.15)
+		
+		select_tween.parallel().tween_property(self, "modulate", Color.WHITE, 0.15)
+
+func _start_floating_loop():
+	if not selected: return
 	
-	add_theme_stylebox_override("normal", style)
+	if select_tween: select_tween.kill()
+	select_tween = create_tween().set_loops()
+	select_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	
+	select_tween.tween_property(self, "position:y", base_pos.y - 25, 0.8)
+	select_tween.tween_property(self, "position:y", base_pos.y - 15, 0.8)
+	

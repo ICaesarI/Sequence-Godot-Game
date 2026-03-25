@@ -1,0 +1,233 @@
+[gd_scene load_steps=9 format=3 uid="uid://b0o82dl81mtsx"]
+
+[ext_resource type="Script" uid="uid://3epqf0ko1c2t" path="res://Scripts/Main.gd" id="1_r150o"]
+[ext_resource type="Script" uid="uid://j5eo6cngnw7i" path="res://Scenes/HUDManager.gd" id="2_idj7w"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_idj7w"]
+frequency = 0.5
+fractal_type = 0
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_kln2b"]
+noise = SubResource("FastNoiseLite_idj7w")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r150o"]
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kln2b"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+bg_color = Color(0.90588236, 0.29803923, 0.23529412, 1)
+border_width_bottom = 2
+border_color = Color(0.5882353, 0.1764706, 0.13333334, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rgh2o"]
+bg_color = Color(0.45882353, 0.105882354, 0.08235294, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pbw6q"]
+bg_color = Color(0.2, 0.2, 0.2, 0.003921569)
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_r150o")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="RootMargin"]
+layout_mode = 2
+color = Color(0.05490196, 0.16470589, 0.11764706, 1)
+
+[node name="TextureRect" type="TextureRect" parent="RootMargin/Background"]
+modulate = Color(0.009145312, 0.2442224, 0.19641438, 1)
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("NoiseTexture2D_kln2b")
+
+[node name="MainLayout" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="InfoPanel" type="PanelContainer" parent="RootMargin/MainLayout"]
+top_level = true
+clip_contents = true
+layout_mode = 2
+script = ExtResource("2_idj7w")
+
+[node name="Margin" type="MarginContainer" parent="RootMargin/MainLayout/InfoPanel"]
+layout_mode = 2
+
+[node name="HBox" type="VBoxContainer" parent="RootMargin/MainLayout/InfoPanel/Margin"]
+layout_mode = 2
+alignment = 1
+
+[node name="Wrapper0" type="MarginContainer" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 50
+
+[node name="Panel_Team0" type="PanelContainer" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper0"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper0/Panel_Team0"]
+layout_mode = 2
+
+[node name="Lbl_Name" type="Label" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper0/Panel_Team0/VBox"]
+layout_mode = 2
+
+[node name="Lbl_Score" type="Label" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper0/Panel_Team0/VBox"]
+layout_mode = 2
+
+[node name="VS_1" type="Label" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox"]
+layout_mode = 2
+
+[node name="Wrapper1" type="MarginContainer" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 50
+
+[node name="Panel_Team1" type="PanelContainer" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper1"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper1/Panel_Team1"]
+layout_mode = 2
+
+[node name="Lbl_Name" type="Label" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper1/Panel_Team1/VBox"]
+layout_mode = 2
+
+[node name="Lbl_Score" type="Label" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper1/Panel_Team1/VBox"]
+layout_mode = 2
+
+[node name="VS_2" type="Label" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox"]
+layout_mode = 2
+
+[node name="Wrapper2" type="MarginContainer" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 50
+
+[node name="Panel_Team2" type="PanelContainer" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper2"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper2/Panel_Team2"]
+layout_mode = 2
+
+[node name="Lbl_Name" type="Label" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper2/Panel_Team2/VBox"]
+layout_mode = 2
+
+[node name="Lbl_Score" type="Label" parent="RootMargin/MainLayout/InfoPanel/Margin/HBox/Wrapper2/Panel_Team2/VBox"]
+layout_mode = 2
+
+[node name="RightSideWrapper" type="VBoxContainer" parent="RootMargin/MainLayout"]
+layout_mode = 2
+
+[node name="GameZone" type="VBoxContainer" parent="RootMargin/MainLayout/RightSideWrapper"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BoardAspect" type="AspectRatioContainer" parent="RootMargin/MainLayout/RightSideWrapper/GameZone"]
+layout_mode = 2
+size_flags_vertical = 3
+ratio = 0.85
+
+[node name="MarginContainer" type="MarginContainer" parent="RootMargin/MainLayout/RightSideWrapper/GameZone/BoardAspect"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 0
+
+[node name="GridContainer" type="GridContainer" parent="RootMargin/MainLayout/RightSideWrapper/GameZone/BoardAspect/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/h_separation = 2
+theme_override_constants/v_separation = 4
+columns = 10
+
+[node name="HandWrapper" type="MarginContainer" parent="RootMargin/MainLayout/RightSideWrapper"]
+layout_mode = 2
+size_flags_vertical = 6
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="HandPanel" type="Panel" parent="RootMargin/MainLayout/RightSideWrapper/HandWrapper"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_stretch_ratio = 20.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_r150o")
+
+[node name="MarginContainer" type="MarginContainer" parent="RootMargin/MainLayout/RightSideWrapper/HandWrapper/HandPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="HandRow" type="HBoxContainer" parent="RootMargin/MainLayout/RightSideWrapper/HandWrapper/HandPanel/MarginContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="HandContainer" type="HBoxContainer" parent="RootMargin/MainLayout/RightSideWrapper/HandWrapper/HandPanel/MarginContainer/HandRow"]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Spacer" type="Control" parent="RootMargin/MainLayout/RightSideWrapper/HandWrapper/HandPanel/MarginContainer/HandRow"]
+layout_mode = 2
+
+[node name="DiscardButton" type="Button" parent="RootMargin/MainLayout/RightSideWrapper/HandWrapper/HandPanel/MarginContainer/HandRow"]
+custom_minimum_size = Vector2(180, 48)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/h_separation = 4
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_kln2b")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_rgh2o")
+theme_override_styles/hover = SubResource("StyleBoxFlat_kln2b")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_pbw6q")
+disabled = true
+text = "DISCARD
+"
