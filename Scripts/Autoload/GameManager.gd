@@ -130,7 +130,7 @@ func set_team_color(team_id: int, new_color: Color):
 		team_colors[team_id] = new_color
 
 # --- GENERACIÓN DEL MAZO (REAL) ---
-'''
+
 func generate_deck():
 	cards.clear()
 	var suits = ["S", "C", "D", "H"]
@@ -158,14 +158,14 @@ func generate_deck():
 	for i in range(26): 
 		for s in suits:
 			# Jota de 1 Ojo (Spades/Clubs) -> Quitar
-			#if s == "S" or s == "C":
-				#cards.append(s + "_J1")
+			if s == "S" or s == "C":
+				cards.append(s + "_J1")
 			# Jota de 2 Ojos (Hearts/Diamonds) -> Poner (Comodín)
 			#else:
 			cards.append(s + "_J2")
 				
 	print("!!! ALERTA: MODO DEBUG (SOLO JOTAS) !!! Cartas: ", cards.size())
-
+'''
 func shuffle_deck():
 	cards.shuffle()
 	

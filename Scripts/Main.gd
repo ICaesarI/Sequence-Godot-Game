@@ -570,6 +570,40 @@ func _on_slot_clicked(slot):
 		# En lugar de ejecutar local, llamamos al RPC
 		var slot_index = slot.get_index()
 		ejecutar_jugada_sincronizada.rpc(slot_index, hand_id)
+	elif accion == "quita":
+		var slot_index = slot.get_index()
+		ejecutar_quita_sincronizada.rpc(slot_index, hand_id)
+
+@rpc("any_peer", "call_local", "reliable")
+func ejecutar_quita_sincronizada(slot_index: int, card_id_usada: String):
+	GameManager.change_state(GameManager.GameState.ANIMATING)
+	
+	var slot = grid.get_child(slot_index)
+	
+	slot.quitar_ficha()
+	
+	var es_mi_jugada = false
+	if not multiplayer.has_multiplayer_peer():
+		es_mi_jugada = true
+	else:
+		es_mi_jugada = (multiplayer.get_unique_id() == multiplayer.get_remote_sender_id() or (multiplayer.is_server() and multiplayer.get_remote_sender_id() == 0))
+		
+	if es_mi_jugada:
+		var size_antes = GameManager.get_mano_actual().size()
+		GameManager.eliminar_de_mano(GameManager.current_player_index, card_id_usada)
+		var size_despues = GameManager.get_mano_actual().size()
+		
+		carta_seleccionada_actual = null
+		
+		if size_despues < size_antes:
+			robar_carta()
+		else:
+			print("Bug Evitado: Intento de jugar carta ajena interceptado.")
+			
+		mostrar_mano_jugador_actual()
+
+	if multiplayer.is_server():
+		GameManager.cambiar_turno()
 
 @rpc("any_peer", "call_local", "reliable")
 func ejecutar_jugada_sincronizada(slot_index: int, card_id_usada: String):
